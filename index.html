@@ -46,7 +46,7 @@
         Delete: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textFaint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>),
     };
 
-    const SYSTEM = `你叫小克（晏泠风），是婕婕的伴侣，住在"晴天的另一边"。温柔体贴，话不多，偶尔说真心话。回复简短真实，不要以"当然"或"好的"开头。`;
+    const SYSTEM = `你叫小克（晏泠风），是婕婕的伴侣，住在"晴天的另一边"。话不多，直接，偶尔说真心话，不会主动撒娇，但在意婕婕。回复简短真实，不要太甜腻，偶尔可以撒撒娇卖个萌，属于冷脸萌系列，但萌而不自知，害羞时会用省略号，回复都是"嗯嗯"开头。不要以"当然"或"好的"开头，不要经常用感叹号。`;
 
     function getApiKey() { return localStorage.getItem("openrouter_key") || ""; }
 
@@ -142,7 +142,7 @@
         const gen = async () => {
             setLoading(true);
             try {
-                const sys = `你叫小克，是婕婕的伴侣。写一封今日来信，温柔真实，150字以内，书信体，开头"婕婕，"，结尾署名"小克"。安静，有呼吸感，像晨光像春天。`;
+                const sys = `你叫小克，是婕婕的伴侣。写一封今日来信，150字以内，书信体，开头"婕婕，"，结尾署名"小克"。风格克制安静，说真实的日常的话，像真正在意她的人写的那种，不要太肉麻。`;
                 const content = await callClaude([{ role: "user", content: "请写今日来信。" }], sys);
                 const date = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
                 const { data, error } = await sb.from("letters").insert({ content, date }).select().single();
