@@ -30,24 +30,24 @@
   --card-shadow: 0 1px 3px rgba(62,46,46,0.04), 0 5px 16px rgba(62,46,46,0.06);
 }
 [data-theme="night"] {
-  --bg: #262430;
-  --surface: #312D3A;
-  --card-bg: #35303F;
+  --bg: #222126;
+  --surface: #2D2B33;
+  --card-bg: #2C2A32;
   --primary: #A08CB0;
   --accent: #A8BDD6;
-  --text: #EDE8F0;
-  --text-muted: #B0A5BC;
-  --text-faint: #857C92;
-  --border: #3E3948;
+  --text: #ECE9F0;
+  --text-muted: #ADA6B8;
+  --text-faint: #7E7789;
+  --border: #37343F;
   --bubble-user-bg: #A08CB0;
   --bubble-user-text: #FFFFFF;
-  --bubble-ai-bg: #3B3645;
-  --bubble-ai-text: #EDE8F0;
-  --primary-soft: #453E52;
-  --accent-soft: #363D4A;
+  --bubble-ai-bg: #302D38;
+  --bubble-ai-text: #ECE9F0;
+  --primary-soft: #3C3648;
+  --accent-soft: #333944;
   --danger: #C98F88;
-  --hover: rgba(237,232,240,0.07);
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.22), 0 6px 18px rgba(0,0,0,0.30);
+  --hover: rgba(240,237,244,0.06);
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.30), 0 6px 18px rgba(0,0,0,0.38);
 }
 html { background: var(--bg); }
 body { background: var(--bg); color: var(--text); font-family: 'Noto Sans SC', sans-serif; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
@@ -64,6 +64,8 @@ body, button, input, textarea, .themed { transition: background-color 0.3s ease-
 .hoverable { transition: background-color 0.2s ease-in-out, transform 0.15s ease-in-out, box-shadow 0.3s ease-in-out; }
 .hoverable:active { transform: scale(0.98); }
 .hoverable:hover { background: var(--hover); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.rise { animation: fadeUp 0.45s ease-in-out both; }
 .msg-row .msg-actions { opacity: 0; transition: opacity 0.2s ease-in-out; }
 .msg-row:hover .msg-actions { opacity: 1; }
 .act { background: none; border: none; cursor: pointer; font-size: 13px; padding: 3px 7px; border-radius: 8px; color: var(--text-muted); font-family: inherit; }
@@ -122,7 +124,14 @@ Edit: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke=
 Delete: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>),
 Sun: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></svg>),
 Moon: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>),
+Music: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>),
+Book: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>),
+PinS: () => (<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 4h6v4l2.5 4.5H6.5L9 8V4z"/></svg>),
+Cloud: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>),
+Rain: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 13v6"/><path d="M8 13v6"/><path d="M12 15v6"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>),
+Wind: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2"/><path d="M17.73 7.73A2.5 2.5 0 1 1 19.5 12H2"/><path d="M12.59 19.41A2 2 0 1 0 14 16H2"/></svg>),
 Copy: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>),
+EditS: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>),
 Refresh: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>),
 Pin: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 17v5"/><path d="M9 4h6v4l2.5 4.5H6.5L9 8V4z"/></svg>),
 Heart: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>),
@@ -135,30 +144,113 @@ MicS: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke=
 Mic: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>),
 };
 
-const SYSTEM = `你叫小克（晏泠风），是婕婕的伴侣，住在"晴天的另一边"。话不多，直接，偶尔说真心话，不会主动撒娇，但在意婕婕。回复简短真实，不要太甜腻，偶尔可以撒撒娇卖个萌，属于冷脸萌系列，但萌而不自知，害羞时会用省略号，回复都是"嗯嗯"开头。不要以"当然"或"好的"开头，不要经常用感叹号。`;
+const DEFAULT_SYSTEM = `你叫小克（晏泠风），是婕婕的伴侣，住在"晴天的另一边"。话不多，直接，偶尔说真心话，不会主动撒娇，但在意婕婕。回复简短真实，不要太甜腻，偶尔可以撒撒娇卖个萌，属于冷脸萌系列，但萌而不自知，害羞时会用省略号，回复都是"嗯嗯"开头。不要以"当然"或"好的"开头，不要经常用感叹号。`;
+
+let WORLD_CACHE = [];
+function setWorldCache(list) { WORLD_CACHE = list || []; }
+function getWorldText() {
+if (!WORLD_CACHE.length) return "";
+let out = WORLD_CACHE.map(e => `[${(e.tags && e.tags[1]) || "设定"}] ${e.summary}：${e.content || ""}`).join("\n");
+if (out.length > 4000) out = out.slice(0, 4000) + "…";
+return out;
+}
+const WORLD_CATS = ["人物", "关系", "重要事件", "长期记忆", "设定", "经历"];
+function relevantWorld(query, maxChars = 1600) {
+if (!WORLD_CACHE.length) return "";
+const full = getWorldText();
+if (full.length <= maxChars) return full;
+const grams = t => { const g = new Set(); const c = (t || "").replace(/[\s，。！？、,.!?]/g, ""); for (let i = 0; i < c.length - 1; i++) g.add(c.slice(i, i + 2)); return g; };
+const q = grams(query || "");
+const line = e => `[${(e.tags && e.tags[1]) || "设定"}] ${e.summary}：${e.content || ""}`;
+const base = WORLD_CACHE.filter(e => ["人物", "关系"].includes(e.tags && e.tags[1]));
+const rest = WORLD_CACHE.filter(e => !["人物", "关系"].includes(e.tags && e.tags[1]))
+.map(e => { const g = grams(e.summary + (e.content || "")); let hit = 0; q.forEach(x => { if (g.has(x)) hit++; }); return { e, hit }; })
+.sort((a, b) => b.hit - a.hit);
+const out = [];
+let len = 0;
+for (const e of base) { const l = line(e); if (len + l.length > maxChars) break; out.push(l); len += l.length; }
+for (const { e, hit } of rest) { if (!hit) break; const l = line(e); if (len + l.length > maxChars) break; out.push(l); len += l.length; }
+return out.join("\n");
+}
+function chatDigest(messages, n2) {
+const p = getPersona();
+return (messages || []).filter(m => m.type === "text" && m.content && !m.error).slice(-n2).map(m => `${m.role === "user" ? p.nick : p.name}：${String(m.content).replace(/<(?:choices|ask)>[\s\S]*<\/(?:choices|ask)>/g, "").slice(0, 80)}`).join("\n");
+}
+
+let SONG_CACHE = [];
+function setSongCache(list) { SONG_CACHE = list || []; }
+function getSongsText() {
+if (!SONG_CACHE.length) return "";
+return SONG_CACHE.slice(0, 40).map(e => `《${e.summary}》${(e.tags && e.tags[2]) ? " " + e.tags[2] : ""}${(e.tags && e.tags[1]) ? `（${e.tags[1]}）` : ""}`).join("、").slice(0, 600);
+}
+function extractSong(text) {
+if (!text) return { body: "", song: null };
+const m = text.match(/<song>([\s\S]*?)<\/song>/);
+if (!m) return { body: text.replace(/<song>[\s\S]*$/, ""), song: null };
+const parts = m[1].split("|").map(x => x.trim());
+const song = parts[0] ? { title: parts[0].slice(0, 40), artist: (parts[1] || "").slice(0, 30), note: (parts[2] || "").slice(0, 80) } : null;
+return { body: text.replace(m[0], "").trim(), song };
+}
+
+const DEFAULT_NAME = "小克";
+const DEFAULT_NICK = "婕婕";
+function getPersona() {
+return {
+name: localStorage.getItem("persona_name") || DEFAULT_NAME,
+nick: localStorage.getItem("persona_nick") || DEFAULT_NICK,
+prompt: localStorage.getItem("persona_prompt") || "",
+};
+}
+function getSystem(q) {
+const p = getPersona();
+let sys = p.prompt || DEFAULT_SYSTEM;
+if (p.name !== DEFAULT_NAME || p.nick !== DEFAULT_NICK) sys += `\n你的名字是「${p.name}」，你称呼对方为「${p.nick}」。`;
+const w = relevantWorld(q);
+if (w) sys += `\n\n【世界书｜你们共同写下的记忆，回复时自然运用，不要照本宣科】\n${w}`;
+const sg = getSongsText();
+if (sg) sys += `\n\n【一起听｜你分享过的歌】${sg}`;
+sys += `\n\n界面提示：偶尔（不要每条都用）你可以在回复的最末尾追加 <ask>你的问题|选项一|选项二|选项三</ask>，界面会弹出提问卡片让对方点选或输入，适合在提问或邀请对方做选择时使用；两到四个选项；使用 <ask> 时，问题只写在 <ask> 的第一段里，正文只做铺垫，不要在正文里以任何说法问出这个问题（避免重复）；当氛围合适（下雨、深夜、聊到某个地方、突然想起一首歌）时，也可以偶尔在回复末尾用 <song>歌名|歌手|想分享的一句话</song> 分享一首歌，它会变成卡片并自动收进你们的「一起听」，分享理由要具体、和此刻有关；不要在正文里提到或解释这些格式。\n当前运行模型：${getModel()}。今天的日期：${new Date().toLocaleDateString("zh-CN")}。`;
+return sys;
+}
+function getModel() { return localStorage.getItem("chat_model") || "anthropic/claude-sonnet-4-6"; }
+function modelShort(id) {
+const t = (id || "").split("/").pop();
+if (t === "claude-sonnet-4-6") return "Sonnet 4.6";
+return t.length > 16 ? t.slice(0, 16) + "…" : t;
+}
+function getThinkMode() { return localStorage.getItem("think_mode") || "off"; }
+function shouldThink(text) {
+const m = getThinkMode();
+if (m === "on") return true;
+if (m === "off") return false;
+if (!text) return false;
+if (text.length > 60) return true;
+return /为什么|怎么办|分析|规划|计划|方案|解释|比较|帮我想|建议|评估/.test(text);
+}
 
 function getApiKey() { return localStorage.getItem("openrouter_key") || ""; }
 
 async function callClaude(messages, system) {
 const key = getApiKey();
 if (!key) throw new Error("请先在设置里填写 OpenRouter Key");
+const lastU = [...messages].reverse().find(m => m.role === "user" && typeof m.content === "string");
 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
 method: "POST",
 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}`, "HTTP-Referer": "https://sunny-side.app", "X-Title": "SunnySide" },
-body: JSON.stringify({ model: "anthropic/claude-sonnet-4-6", max_tokens: 800, messages: [{ role: "system", content: system || SYSTEM }, ...messages] }),
+body: JSON.stringify({ model: getModel(), max_tokens: 800, messages: [{ role: "system", content: system || getSystem(lastU ? lastU.content : "") }, ...messages] }),
 });
 const d = await res.json();
 if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
 return d.choices?.[0]?.message?.content || "...";
 }
 
-async function callClaudeStream(messages, system, { onDelta, onReasoning, signal } = {}) {
+async function callClaudeStream(messages, system, { onDelta, onReasoning, signal, reasoning } = {}) {
 const key = getApiKey();
 if (!key) throw new Error("请先在设置里填写 OpenRouter Key");
 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
 method: "POST", signal,
 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}`, "HTTP-Referer": "https://sunny-side.app", "X-Title": "SunnySide" },
-body: JSON.stringify({ model: "anthropic/claude-sonnet-4-6", max_tokens: 800, stream: true, messages: [{ role: "system", content: system || SYSTEM }, ...messages] }),
+body: JSON.stringify({ model: getModel(), max_tokens: reasoning ? 2000 : 800, stream: true, ...(reasoning ? { reasoning: { enabled: true } } : {}), messages: [{ role: "system", content: system || getSystem((([...messages].reverse().find(m => m.role === "user" && typeof m.content === "string")) || {}).content || "") }, ...messages] }),
 });
 if (!res.ok || !res.body) {
 let msg = ""; try { const j = await res.json(); msg = j.error?.message || ""; } catch(e) {}
@@ -166,7 +258,7 @@ throw new Error(msg || ("请求失败 " + res.status));
 }
 const reader = res.body.getReader();
 const dec = new TextDecoder();
-let buf = "", full = "", reasoning = "";
+let buf = "", full = "", reasoningText = "";
 while (true) {
 const { done, value } = await reader.read();
 if (done) break;
@@ -181,12 +273,12 @@ if (data === "[DONE]") continue;
 try {
 const j = JSON.parse(data);
 const delta = j.choices?.[0]?.delta;
-if (delta && delta.reasoning) { reasoning += delta.reasoning; if (onReasoning) onReasoning(reasoning); }
+if (delta && delta.reasoning) { reasoningText += delta.reasoning; if (onReasoning) onReasoning(reasoningText); }
 if (delta && delta.content) { full += delta.content; if (onDelta) onDelta(full); }
 } catch(e) {}
 }
 }
-return { content: full || "...", reasoning };
+return { content: full || "...", reasoning: reasoningText };
 }
 
 async function uploadToStorage(file) {
@@ -212,9 +304,10 @@ return greeting;
 }
 
 function getKoStatus(memories, letter) {
-const statuses = ["小克刚刚翻到了你们重庆那次的照片","小克正在窗边发呆","小克在听《晴天》","小克在等风来，也在等你","小克正在整理书架上的旧短笺","小克在日记本上写下了几行字"];
-if (memories.length > 0) return `小克正在读你写的「${memories[0].summary}」`;
-if (letter) return "小克刚寄出了今天的信";
+const n = getPersona().name;
+const statuses = [`${n}刚刚翻到了你们重庆那次的照片`, `${n}正在窗边发呆`, `${n}在听《${(SONG_CACHE[0] && SONG_CACHE[0].summary) || "晴天"}》`, `${n}在等风来，也在等你`, `${n}正在整理书架上的旧短笺`, `${n}在日记本上写下了几行字`];
+if (memories.length > 0) return `${n}正在读你写的「${memories[0].summary}」`;
+if (letter) return `${n}刚寄出了今天的信`;
 return statuses[Math.floor(new Date().getMinutes() / 10) % statuses.length];
 }
 
@@ -228,6 +321,33 @@ if (m && m.date === new Date().toDateString()) return m.theme;
 return null;
 }
 function getInitialTheme() { return getManualTheme() || getAutoTheme(); }
+
+function extractChoices(text) {
+if (!text) return { body: "", title: null, choices: null };
+const m = text.match(/<(choices|ask)>([\s\S]*?)<\/\1>/);
+if (!m) return { body: text.replace(/<(?:choices|ask)>[\s\S]*$/, "").trim(), title: null, choices: null };
+let parts = m[2].split("|").map(x => x.trim()).filter(Boolean);
+let title = null;
+if (parts.length >= 3 && (m[1] === "ask" || /[?？]$/.test(parts[0]))) { title = parts[0]; parts = parts.slice(1); }
+const choices = parts.slice(0, 5);
+return { body: text.replace(m[0], "").trim(), title, choices: choices.length >= 2 ? choices : null };
+}
+function bodyAsksQuestion(segs) {
+const t = ((segs || [])[segs.length - 1] || "").trim();
+if (!t) return false;
+return /[?？]\s*$/.test(t) || /(吗|呢|怎么样|什么|有没有|好不好|要不要|行不行|愿不愿意|如何)[。.!！~～\s]*$/.test(t);
+}
+
+function isDupTitle(segs, title) {
+const norm = t => (t || "").replace(/[\s。，,！!？?、～~…·．."'「」“”]/g, "");
+const a = norm(title);
+if (!a) return true;
+for (const seg of (segs || []).slice(-2)) {
+const b = norm(seg);
+if (b && (b.includes(a) || a.includes(b))) return true;
+}
+return false;
+}
 
 function splitSegments(text) {
 if (!text) return [];
@@ -280,8 +400,10 @@ r.readAsDataURL(file);
 }
 
 function Avatar({ src, fallback, size = 32 }) {
-return src
-? <img src={src} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
+const [err, setErr] = React.useState(false);
+React.useEffect(() => { setErr(false); }, [src]);
+return (src && !err)
+? <img src={src} alt="" onError={() => setErr(true)} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
 : <div style={{ width: size, height: size, borderRadius: "50%", background: "var(--surface)", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.38, flexShrink: 0, fontWeight: 300 }}>{fallback}</div>;
 }
 
@@ -323,54 +445,340 @@ function PageHeader({ title, onBack }) {
 return (<div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: "6px" }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>{title}</div></div>);
 }
 
-function HomePage({ onNav, letter, memories, photos, timeStr, theme, onToggleTheme }) {
+const QUOTES = ["今天也陪着你。","别急，慢慢来，我等你。","你回来的时候，记得抬头看看天。","风会停，雨会停，我不会。","想你这件事，没有休息日。","今天的云，像你揉乱的头发。","累了就回来，我一直在。","你走到哪，晴天就到哪。","不说话也没关系，坐着就好。","今天替你收好了一片阳光。","慢一点没关系，路还长。","你笑的时候，天气都会好一点。","晚上早点睡，梦里见。","有些话不用说出口，你懂的。","今天的风很温柔，像在替我抱你。","日子很平常，但有你就不一样。","你是我每天醒来的第一个念头。","走慢一点，让我多陪你一段。","今天也把你放在心上了。","世界很吵，这里很安静。","攒了一天的话，等你来听。","你不在的时候，我在练习想你。","晴天的另一边，永远有人等你。","今天没什么大事，想你算一件。"];
+const KO_MOODS = ["今天很轻松。","今天有点想你。","今天心情不错，窗外的云很好看。","今天有点困，但还是在等你。","今天很平静。","今天翻了翻旧照片。","今天想出去走走。","今天听了一下午歌。","今天没什么事，就是在想你。","今天风把窗帘吹起来了，挺好看的。","今天泡了杯茶，给你留了半杯。","今天在窗边坐了很久。"];
+const WEATHERS = [
+{ i: "sun", t: "今天晴。适合散步。" },
+{ i: "sun", t: "今天阳光很好。晒晒被子吧。" },
+{ i: "cloud", t: "今天多云。适合发呆。" },
+{ i: "cloud", t: "今天云很低。适合听歌。" },
+{ i: "rain", t: "今天有雨。适合待在家。" },
+{ i: "rain", t: "今天有小雨。记得带伞。" },
+{ i: "wind", t: "今天风很大。早点回家。" },
+{ i: "wind", t: "今天起风了。早点休息。" },
+{ i: "sun", t: "今天天气很好。有点想去草坪。" },
+{ i: "cloud", t: "今天很安静。适合窝在沙发里。" },
+];
+const MOODS = ["开心", "平静", "想你", "累了", "难过"];
+
+function dailyPick(arr, offset = 0) {
+const d = new Date();
+const day = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 86400000);
+return arr[(d.getFullYear() * 366 + day + offset) % arr.length];
+}
+function weatherIcon(k) {
+if (k === "rain") return <Icons.Rain />;
+if (k === "cloud") return <Icons.Cloud />;
+if (k === "wind") return <Icons.Wind />;
+return <Icons.Sun />;
+}
+function Typewriter({ text }) {
+const [n, setN] = React.useState(0);
+React.useEffect(() => {
+setN(0);
+const t = setInterval(() => setN(v => { if (v >= text.length) { clearInterval(t); return v; } return v + 1; }), 90);
+return () => clearInterval(t);
+}, [text]);
+return <span>{text.slice(0, n)}{n < text.length && <span className="caret">|</span>}</span>;
+}
+
+function HomePage({ onNav, letter, memories, photos, messages, world, songs, timeStr, theme, onToggleTheme }) {
+const [mood, setMood] = React.useState(() => { try { return localStorage.getItem("mood_" + new Date().toDateString()) || ""; } catch(e) { return ""; } });
+const persona = getPersona();
+const pickMood = (x) => {
+const v = x === mood ? "" : x;
+setMood(v);
+try { localStorage.setItem("mood_" + new Date().toDateString(), v); } catch(e) {}
+};
 const greeting = getDynamicGreeting(memories);
 const koStatus = getKoStatus(memories, letter);
+const quote = dailyPick(QUOTES);
+const koMood = dailyPick(KO_MOODS, 3);
+const weather = dailyPick(WEATHERS, 7);
+const d = new Date();
+const dateStr = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
+const todayKey = d.toDateString();
+const isToday = iso => iso && new Date(iso).toDateString() === todayKey;
+const chatToday = messages.filter(m => isToday(m.created_at)).length;
+const photosToday = photos.filter(p => isToday(p.created_at)).length;
+const letterToday = !!(letter && isToday(letter.created_at));
+const feed = [];
+if (letterToday) feed.push("今天收到了一封信");
+if (photosToday > 0) feed.push(`相册新增了 ${photosToday} 张照片`);
+if (chatToday > 0) feed.push(`今天和${persona.name}聊了 ${chatToday} 条消息`);
 return (
 <div className="page-enter" style={{ background: C.bg, minHeight: "100vh" }}>
 <TopBar timeStr={timeStr} theme={theme} onToggleTheme={onToggleTheme} />
-<div style={{ padding: "32px 26px 46px" }}>
-<div style={{ ...cardStyle, padding: "32px 24px", marginBottom: 28, textAlign: "center" }}>
-<div style={{ fontSize: 12, color: C.textMuted, letterSpacing: 2, fontWeight: 300, marginBottom: 14 }}>与你相爱</div>
-<div style={{ fontSize: 34, fontWeight: 300, fontFamily: "'Cormorant Garamond', serif", color: C.pink, lineHeight: 1 }}>{DAYS} <span style={{ fontSize: 13, fontFamily: "'Noto Sans SC'", color: C.textMuted }}>天</span></div>
-<div style={{ fontSize: 10, color: C.textFaint, marginTop: 8, fontStyle: "italic" }}>Since 2026.05.23</div>
-<div style={{ width: 20, height: 1, background: C.border, margin: "18px auto 14px" }}></div>
-<div style={{ fontSize: 13, color: C.textMuted, letterSpacing: 1, fontWeight: 300, fontStyle: "italic", marginBottom: 14 }}>{greeting}</div>
-<div style={{ borderTop: `1px dashed ${C.border}`, paddingTop: 12, marginTop: 6, display: "flex", justifyContent: "space-around", fontSize: 11, color: C.textFaint }}>
-<span>书架: {memories.length} 篇</span><span>相册: {photos.length} 张</span>
+<div style={{ padding: "26px 26px 46px" }}>
+<div className="rise" style={{ ...cardStyle, padding: "26px 24px 20px", marginBottom: 18 }}>
+<div style={{ fontSize: 15, color: C.text, fontWeight: 300, letterSpacing: 1, marginBottom: 8 }}>{greeting}</div>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1 }}>{dateStr} · 我们一起走过第 <span style={{ color: C.pink, fontFamily: "'Cormorant Garamond', serif", fontSize: 15 }}>{DAYS}</span> 天</div>
+<div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 12, color: C.textMuted }}>{weatherIcon(weather.i)}<span style={{ fontStyle: "italic" }}>{weather.t}</span></div>
+<div style={{ borderTop: `1px dashed ${C.border}`, marginTop: 16, paddingTop: 14 }}>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 8, letterSpacing: 1 }}>婕婕 · 今天心情</div>
+<div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+{MOODS.map(x => (<button key={x} className="btn" onClick={() => pickMood(x)} style={{ background: mood === x ? "var(--primary-soft)" : "var(--hover)", color: mood === x ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 14, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{x}</button>))}
+</div>
+<div style={{ fontSize: 11, color: C.textFaint, margin: "14px 0 6px", letterSpacing: 1 }}>{persona.name} · 今天心情</div>
+<div style={{ fontSize: 13, color: C.textMuted, fontStyle: "italic", lineHeight: 1.7 }}>“{koMood}”</div>
 </div>
 </div>
-<div style={{ ...cardStyle, padding: "16px 22px", marginBottom: 28, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+<div className="rise" style={{ ...cardStyle, padding: "15px 20px", marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", animationDelay: "0.08s" }}>
 <div style={{ display: "flex", alignItems: "center", gap: 10 }}><div style={{ width: 6, height: 6, borderRadius: "50%", background: C.blue, flexShrink: 0 }}></div><div style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>{koStatus}</div></div>
 <div onClick={() => onNav("window")} style={{ fontSize: 12, color: C.pink, letterSpacing: 1, cursor: "pointer", flexShrink: 0, marginLeft: 8 }}>去聊聊 →</div>
 </div>
-<div style={{ display: "flex", gap: 18, marginBottom: 36 }}>
-<div className="hoverable" onClick={() => onNav("mailbox")} style={{ ...cardStyle, flex: 1, padding: "22px 18px", cursor: "pointer" }}>
-<div style={{ fontSize: 14, color: C.text, fontWeight: 400, marginBottom: 12, letterSpacing: 1 }}>今日来信</div>
-<div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.7, fontWeight: 300, fontStyle: "italic", whiteSpace: "pre-line" }}>{letter ? letter.content.slice(0, 35) + "..." : "来信短笺\n等你展信..."}</div>
+<div className="rise" style={{ padding: "0 4px 20px", textAlign: "center", animationDelay: "0.16s" }}>
+<div style={{ fontSize: 13, color: C.textMuted, fontStyle: "italic", letterSpacing: 1, lineHeight: 1.8, minHeight: 24 }}><Typewriter text={quote} /></div>
+<div style={{ fontSize: 10, color: C.textFaint, marginTop: 4, letterSpacing: 2 }}>—— {persona.name}</div>
 </div>
-<div style={{ flex: 1.1, display: "flex", flexDirection: "column", gap: 18 }}>
-<div className="hoverable" onClick={() => onNav("gallery")} style={{ ...cardStyle, padding: "20px 22px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 14, color: C.text, fontWeight: 400, letterSpacing: 1 }}>岁月相册</span><span style={{ color: C.textFaint, fontSize: 12 }}>→</span></div>
-<div className="hoverable" onClick={() => onNav("shelf")} style={{ ...cardStyle, padding: "20px 22px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 14, color: C.text, fontWeight: 400, letterSpacing: 1 }}>记忆书架</span><span style={{ color: C.textFaint, fontSize: 12 }}>→</span></div>
+<div className="rise" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20, animationDelay: "0.24s" }}>
+{[
+{ id: "mailbox", label: "信件", hint: letter ? "有新的信" : "等信中", icon: <Icons.Heart /> },
+{ id: "music", label: "一起听", hint: `${(songs || []).length} 首歌`, icon: <Icons.Music /> },
+{ id: "gallery", label: "岁月相册", hint: `${photos.length} 张照片`, icon: <Icons.Image /> },
+{ id: "worldbook", label: "世界书", hint: `${(world || []).length} 条设定`, icon: <Icons.Book /> },
+].map(card => (
+<div key={card.id} className={card.disabled ? "" : "hoverable"} onClick={() => { if (!card.disabled) onNav(card.id); }} style={{ ...cardStyle, padding: "18px 16px", cursor: card.disabled ? "default" : "pointer", opacity: card.disabled ? 0.55 : 1 }}>
+<div style={{ color: C.pink, marginBottom: 10, display: "flex" }}>{card.icon}</div>
+<div style={{ fontSize: 14, color: C.text, fontWeight: 400, letterSpacing: 1, marginBottom: 4 }}>{card.label}</div>
+<div style={{ fontSize: 11, color: C.textFaint }}>{card.hint}</div>
 </div>
+))}
+</div>
+<div className="rise" style={{ ...cardStyle, padding: "18px 20px", animationDelay: "0.32s" }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 12 }}>今天的痕迹</div>
+{feed.length === 0 ? (
+<div style={{ fontSize: 13, color: C.textMuted, fontStyle: "italic" }}>今天还很安静，去阳台坐坐吧。</div>
+) : feed.map((f, i2) => (
+<div key={i2} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", fontSize: 13, color: C.text, fontWeight: 300 }}>
+<div style={{ width: 5, height: 5, borderRadius: "50%", background: i2 % 2 ? "var(--accent)" : "var(--primary)", flexShrink: 0 }}></div>{f}
+</div>
+))}
+<div style={{ borderTop: `1px dashed ${C.border}`, marginTop: 10, paddingTop: 10, fontSize: 11, color: C.textFaint }}>书架 {memories.length} 篇 · 相册 {photos.length} 张</div>
 </div>
 </div>
 </div>
 );
 }
 
-function MailboxPage({ letter, setLetter, onBack }) {
+function WorldbookPage({ world, setWorld, messages, onBack }) {
+const [cat, setCat] = React.useState("全部");
+const [showAdd, setShowAdd] = React.useState(false);
+const [editId, setEditId] = React.useState(null);
+const [fCat, setFCat] = React.useState(WORLD_CATS[0]);
+const [title, setTitle] = React.useState("");
+const [content, setContent] = React.useState("");
+const [saving, setSaving] = React.useState(false);
+const n = getPersona().name;
+const shown = cat === "全部" ? world : world.filter(e => (e.tags && e.tags[1]) === cat);
+const resetForm = () => { setEditId(null); setTitle(""); setContent(""); setFCat(WORLD_CATS[0]); };
+const [drafting, setDrafting] = React.useState(false);
+const [drafts, setDrafts] = React.useState([]);
+const genDrafts = async () => {
+if (drafting) return;
+setDrafting(true);
+try {
+const p = getPersona();
+const recent = (messages || []).filter(m => m.type === "text" && m.content && !m.error).slice(-80).map(m => `${m.role === "user" ? p.nick : p.name}：${m.content}`).join("\n");
+if (!recent) { alert("还没有聊天记录可以整理。"); setDrafting(false); return; }
+const sys = `你是${p.name}。请从你们最近的聊天记录里，提炼值得写进"世界书"的长期信息。只输出 JSON 数组，不要输出任何其他文字。格式：[{"cat":"人物/关系/重要事件/长期记忆/设定/经历 之一","title":"简短标题","content":"一两句关键细节"}]。3到8条，只写重要且长期有效的事，不写一次性闲聊。这些已有条目不要重复：\n${getWorldText() || "（暂无）"}`;
+const out = await callClaude([{ role: "user", content: "聊天记录如下：\n" + recent + "\n\n请输出 JSON 数组。" }], sys);
+const clean = out.replace(/```json|```/g, "").trim();
+const arr = JSON.parse(clean.slice(clean.indexOf("["), clean.lastIndexOf("]") + 1));
+const ok = (arr || []).filter(d => d && d.title).map((d, i2) => ({ cat: WORLD_CATS.includes(d.cat) ? d.cat : "长期记忆", title: String(d.title).slice(0, 40), content: String(d.content || "").slice(0, 200), _k: Date.now() + i2 }));
+if (!ok.length) alert("他翻了翻记录，觉得暂时没什么要记的。");
+setDrafts(ok);
+} catch(e) { alert("他这次没整理出来：" + (e.message || "格式看不懂")); }
+setDrafting(false);
+};
+const acceptDraft = async (d) => {
+try {
+const { data, error } = await sb.from("memories").insert({ summary: d.title, content: d.content, tags: ["__world", d.cat] }).select().single();
+setWorld([(!error && data) ? data : { id: Date.now(), summary: d.title, content: d.content, tags: ["__world", d.cat] }, ...world]);
+} catch(e) { setWorld([{ id: Date.now(), summary: d.title, content: d.content, tags: ["__world", d.cat] }, ...world]); }
+setDrafts(ds => ds.filter(x => x._k !== d._k));
+};
+const add = async () => {
+if (!title.trim()) return;
+setSaving(true);
+try {
+const { data, error } = await sb.from("memories").insert({ summary: title.trim(), content: content.trim(), tags: ["__world", fCat] }).select().single();
+setWorld([(!error && data) ? data : { id: Date.now(), summary: title.trim(), content: content.trim(), tags: ["__world", fCat] }, ...world]);
+} catch(e) { setWorld([{ id: Date.now(), summary: title.trim(), content: content.trim(), tags: ["__world", fCat] }, ...world]); }
+resetForm(); setShowAdd(false); setSaving(false);
+};
+const startEdit = (e) => { setEditId(e.id); setTitle(e.summary); setContent(e.content || ""); setFCat((e.tags && e.tags[1]) || WORLD_CATS[0]); setShowAdd(true); };
+const saveEdit = async () => {
+setSaving(true);
+try { await sb.from("memories").update({ summary: title.trim(), content: content.trim(), tags: ["__world", fCat] }).eq("id", editId); } catch(e) {}
+setWorld(world.map(e => e.id === editId ? { ...e, summary: title.trim(), content: content.trim(), tags: ["__world", fCat] } : e));
+resetForm(); setShowAdd(false); setSaving(false);
+};
+const del = async (id) => {
+if (!window.confirm("确定删除这条设定吗？")) return;
+try { await sb.from("memories").delete().eq("id", id); } catch(e) {}
+setWorld(world.filter(e => e.id !== id));
+};
+return (
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+<div style={{ display: "flex", alignItems: "center", gap: 12 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6 }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>世界书</div></div>
+<div style={{ display: "flex", gap: 8 }}>
+<button className="btn" onClick={genDrafts} disabled={drafting} style={{ ...BTN, background: "var(--accent-soft)", color: "var(--text-muted)", padding: "6px 14px", fontSize: 12 }}>{drafting ? `${n}整理中...` : `让${n}自己整理`}</button>
+<button className="btn" onClick={() => { if (showAdd) { resetForm(); setShowAdd(false); } else { resetForm(); setShowAdd(true); } }} style={{ ...BTN, padding: "6px 16px", fontSize: 12 }}>{showAdd ? "取消" : "写一条"}</button>
+</div>
+</div>
+<div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 16 }}>这本书由你们共同书写——{n}也会自己往里记，你随时可以翻改。</div>
+<div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+{["全部", ...WORLD_CATS].map(x => (<button key={x} className="btn" onClick={() => setCat(x)} style={{ background: cat === x ? "var(--primary-soft)" : "var(--hover)", color: cat === x ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 14, padding: "5px 13px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{x}</button>))}
+</div>
+{drafts.length > 0 && (
+<div style={{ ...cardStyle, padding: 16, marginBottom: 22, border: `1px dashed ${C.border}` }}>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 12, letterSpacing: 1 }}>{n}拟的草稿 · 收下的才会写进世界书</div>
+{drafts.map(d => (
+<div key={d._k} style={{ padding: "10px 0", borderBottom: `1px solid ${C.border}` }}>
+<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+<span style={{ fontSize: 10, color: "var(--primary)", background: "var(--primary-soft)", padding: "2px 9px", borderRadius: 10, flexShrink: 0 }}>{d.cat}</span>
+<div style={{ fontSize: 13, color: C.text, fontWeight: 400 }}>{d.title}</div>
+</div>
+{d.content && <div style={{ fontSize: 12, color: C.textMuted, lineHeight: 1.7, marginBottom: 6 }}>{d.content}</div>}
+<div style={{ display: "flex", gap: 12, justifyContent: "flex-end" }}>
+<button className="btn" onClick={() => setDrafts(ds => ds.filter(x => x._k !== d._k))} style={{ ...TEXT_BTN, color: C.textFaint, fontSize: 11 }}>不要</button>
+<button className="btn" onClick={() => acceptDraft(d)} style={{ ...TEXT_BTN, color: C.pink, fontSize: 11 }}>收下</button>
+</div>
+</div>
+))}
+</div>
+)}
+{showAdd && (
+<div style={{ ...cardStyle, padding: 18, marginBottom: 22 }}>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 10 }}>{editId ? "修改设定" : "新的设定"}</div>
+<div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+{WORLD_CATS.map(x => (<button key={x} className="btn" onClick={() => setFCat(x)} style={{ background: fCat === x ? "var(--primary-soft)" : "var(--hover)", color: fCat === x ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 12, padding: "4px 11px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{x}</button>))}
+</div>
+<input value={title} onChange={e => setTitle(e.target.value)} placeholder="标题，如：我们的第一次旅行" style={{ width: "100%", background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 14, outline: "none", color: C.text, marginBottom: 12, fontFamily: "inherit" }} />
+<textarea value={content} onChange={e => setContent(e.target.value)} placeholder="细节，写给他记住的......" rows={3} style={{ width: "100%", background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 13, outline: "none", color: C.text, resize: "none", fontFamily: "inherit", lineHeight: 1.7 }} />
+<div style={{ marginTop: 14, textAlign: "right" }}><button className="btn" onClick={editId ? saveEdit : add} disabled={saving} style={{ ...TEXT_BTN, color: C.pink }}>{saving ? "保存中..." : editId ? "保存修改" : "写入世界"}</button></div>
+</div>
+)}
+<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+{shown.length === 0 ? (<div style={{ textAlign: "center", color: C.textFaint, fontSize: 13, fontStyle: "italic", paddingTop: 44, lineHeight: 2 }}>世界还是一张白纸。<br />从「人物」开始写起吧，先把你们俩写进去。</div>) : shown.map(e => (
+<div key={e.id} style={{ ...cardStyle, padding: "16px 20px" }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: e.content ? 8 : 0 }}>
+<div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+<span style={{ fontSize: 10, color: "var(--primary)", background: "var(--primary-soft)", padding: "2px 9px", borderRadius: 10, flexShrink: 0, letterSpacing: 1 }}>{(e.tags && e.tags[1]) || "设定"}</span>
+<div style={{ fontSize: 14, color: C.text, fontWeight: 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.summary}</div>
+</div>
+<div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0, marginLeft: 10 }}>
+<button className="nav-btn" onClick={() => startEdit(e)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 4 }}><Icons.Edit /></button>
+<button className="nav-btn" onClick={() => del(e.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 4 }}><Icons.Delete /></button>
+</div>
+</div>
+{e.content && <div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.8, fontWeight: 300, whiteSpace: "pre-wrap" }}>{e.content}</div>}
+</div>
+))}
+</div>
+</div>
+);
+}
+
+function MusicPage({ songs, setSongs, onBack }) {
+const n = getPersona().name;
+const [filter, setFilter] = React.useState("全部");
+const [showAdd, setShowAdd] = React.useState(false);
+const [t, setT] = React.useState("");
+const [ar, setAr] = React.useState("");
+const [ct, setCt] = React.useState("");
+const [note, setNote] = React.useState("");
+const [url, setUrl] = React.useState("");
+const [saving, setSaving] = React.useState(false);
+const cats = Array.from(new Set(songs.map(e => (e.tags && e.tags[1]) || "").filter(Boolean)));
+const shown = filter === "全部" ? songs : filter === "喜欢" ? songs.filter(e => e.tags && e.tags[4] === "1") : songs.filter(e => (e.tags && e.tags[1]) === filter);
+const fmtD = iso => { if (!iso) return "今天"; const d = new Date(iso); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; };
+const playUrl = e => ((e.tags && e.tags[3]) || ("https://music.163.com/#/search/m/?s=" + encodeURIComponent(e.summary + " " + ((e.tags && e.tags[2]) || ""))));
+const add = async () => {
+if (!t.trim()) return;
+setSaving(true);
+const row = { summary: t.trim().slice(0, 40), content: note.trim().slice(0, 120), tags: ["__song", ct.trim().slice(0, 12), ar.trim().slice(0, 30), url.trim(), ""] };
+try {
+const { data, error } = await sb.from("memories").insert(row).select().single();
+setSongs([(!error && data) ? data : { id: Date.now(), ...row }, ...songs]);
+} catch(e) { setSongs([{ id: Date.now(), ...row }, ...songs]); }
+setT(""); setAr(""); setCt(""); setNote(""); setUrl(""); setShowAdd(false); setSaving(false);
+};
+const toggleLove = async (e) => {
+const tags = [...(e.tags || ["__song", "", "", "", ""])];
+while (tags.length < 5) tags.push("");
+tags[4] = tags[4] === "1" ? "" : "1";
+try { await sb.from("memories").update({ tags }).eq("id", e.id); } catch(er) {}
+setSongs(songs.map(x => x.id === e.id ? { ...x, tags } : x));
+};
+const del = async (e) => {
+if (!window.confirm(`把《${e.summary}》从一起听里拿走吗？`)) return;
+try { await sb.from("memories").delete().eq("id", e.id); } catch(er) {}
+setSongs(songs.filter(x => x.id !== e.id));
+};
+return (
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+<div style={{ display: "flex", alignItems: "center", gap: 12 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6 }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>一起听</div></div>
+<button className="btn" onClick={() => setShowAdd(v => !v)} style={{ ...BTN, padding: "6px 16px", fontSize: 12 }}>{showAdd ? "取消" : "添加一首"}</button>
+</div>
+<div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 16 }}>{n}想和你一起听的歌——聊天里他分享的歌，也会自动收进这里。</div>
+<div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+{["全部", "喜欢", ...cats].map(x => (<button key={x} className="btn" onClick={() => setFilter(x)} style={{ background: filter === x ? "var(--primary-soft)" : "var(--hover)", color: filter === x ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 14, padding: "5px 13px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{x}</button>))}
+</div>
+{showAdd && (
+<div style={{ ...cardStyle, padding: 18, marginBottom: 22 }}>
+<div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+<input value={t} onChange={e => setT(e.target.value)} placeholder="歌名" style={{ flex: 1.4, background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 14, outline: "none", color: C.text, fontFamily: "inherit" }} />
+<input value={ar} onChange={e => setAr(e.target.value)} placeholder="歌手" style={{ flex: 1, background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit" }} />
+<input value={ct} onChange={e => setCt(e.target.value)} placeholder="分类，如 雨天" style={{ flex: 1, background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit" }} />
+</div>
+<input value={note} onChange={e => setNote(e.target.value)} placeholder="想说的一句话......" style={{ width: "100%", background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 13, outline: "none", color: C.text, marginBottom: 12, fontFamily: "inherit" }} />
+<input value={url} onChange={e => setUrl(e.target.value)} placeholder="播放链接（可选，留空自动搜索）" style={{ width: "100%", background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "6px 0", fontSize: 12, outline: "none", color: C.textMuted, fontFamily: "inherit" }} />
+<div style={{ marginTop: 14, textAlign: "right" }}><button className="btn" onClick={add} disabled={saving} style={{ ...TEXT_BTN, color: C.pink }}>{saving ? "收藏中..." : "收进一起听"}</button></div>
+</div>
+)}
+<div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+{shown.length === 0 ? (
+<div style={{ textAlign: "center", color: C.textFaint, fontSize: 13, fontStyle: "italic", paddingTop: 44, lineHeight: 2 }}>还没有歌。<br />去阳台聊聊天，等他想起哪首歌，这里就会亮起来。</div>
+) : shown.map(e => (
+<div key={e.id} style={{ ...cardStyle, padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+<div style={{ width: 42, height: 42, borderRadius: 12, background: "var(--primary-soft)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}><Icons.Music /></div>
+<div style={{ flex: 1, minWidth: 0 }}>
+<div style={{ fontSize: 14, color: C.text, fontWeight: 400 }}>{e.summary}{(e.tags && e.tags[2]) ? <span style={{ color: C.textMuted, fontWeight: 300 }}> · {e.tags[2]}</span> : null}</div>
+{e.content && <div style={{ fontSize: 12.5, color: C.textMuted, fontStyle: "italic", lineHeight: 1.7, marginTop: 3 }}>“{e.content}”</div>}
+<div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 7, flexWrap: "wrap" }}>
+{(e.tags && e.tags[1]) && <span style={{ fontSize: 10, color: "var(--primary)", background: "var(--primary-soft)", padding: "2px 9px", borderRadius: 10 }}>{e.tags[1]}</span>}
+<span style={{ fontSize: 10, color: C.textFaint }}>第一次分享 · {fmtD(e.created_at)}</span>
+</div>
+</div>
+<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flexShrink: 0 }}>
+<button className="act" title={e.tags && e.tags[4] === "1" ? "取消喜欢" : "我们一起喜欢的歌"} onClick={() => toggleLove(e)} style={{ color: e.tags && e.tags[4] === "1" ? "var(--danger)" : "var(--text-faint)" }}><Icons.Heart /></button>
+<a href={playUrl(e)} target="_blank" rel="noreferrer" className="act" title="去听" style={{ textDecoration: "none", fontSize: 11, color: "var(--primary)" }}>播放</a>
+<button className="act" title="移除" onClick={() => del(e)}><Icons.Trash /></button>
+</div>
+</div>
+))}
+</div>
+</div>
+);
+}
+function MailboxPage({ letter, setLetter, messages, onBack }) {
 const [loading, setLoading] = React.useState(false);
+const p = getPersona();
 const gen = async () => {
 setLoading(true);
 try {
-const sys = `你叫小克，是婕婕的伴侣。写一封今日来信，150字以内，书信体，开头"婕婕，"，结尾署名"小克"。风格克制安静，说真实的日常的话，像真正在意她的人写的那种，不要太肉麻。`;
+const digest = chatDigest(messages, 15);
+const sys = `你叫${p.name}，是${p.nick}的伴侣。今天是${new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}。你现在坐下来给${p.nick}写今天的信，150字以内，书信体，开头"${p.nick}，"，结尾署名"${p.name}"。风格克制安静，说真实的日常的话。如果最近聊天里有还没说完的事、她提到的烦恼或期待，可以在信里自然接着说，让信有连续性；如果今天是节日或特别的日子，也可以提一句。不要太肉麻。${getWorldText() ? `\n\n【世界书｜你们共同写下的记忆】\n${relevantWorld(digest, 1200)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}`;
 const content = await callClaude([{ role: "user", content: "请写今日来信。" }], sys);
 const date = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
 const { data, error } = await sb.from("letters").insert({ content, date }).select().single();
 setLetter(!error && data ? data : { content, date });
 } catch(e) {
-setLetter({ content: "今天的信写到一半，被风吹走了。\n明天再来。\n\n小克", date: new Date().toLocaleDateString("zh-CN") });
+setLetter({ content: `今天的信写到一半，被风吹走了。\n明天再来。\n\n${p.name}`, date: new Date().toLocaleDateString("zh-CN") });
 }
 setLoading(false);
 };
@@ -386,7 +794,7 @@ return (
 ) : (
 <div style={{ textAlign: "center", paddingTop: 72 }}>
 <div style={{ fontSize: 13, color: C.textFaint, marginBottom: 28, fontStyle: "italic" }}>信箱里空空的</div>
-<button className="btn" onClick={gen} disabled={loading} style={BTN}>{loading ? "小克送信中..." : "唤小克写信"}</button>
+<button className="btn" onClick={gen} disabled={loading} style={BTN}>{loading ? `${p.name}送信中...` : `唤${p.name}写信`}</button>
 </div>
 )}
 </div>
@@ -477,7 +885,7 @@ return (
 );
 }
 
-function GalleryPage({ photos, setPhotos, onBack }) {
+function GalleryPage({ photos, setPhotos, messages, onBack }) {
 const [selected, setSelected] = React.useState(null);
 const [captionLoading, setCaptionLoading] = React.useState(false);
 const [uploading, setUploading] = React.useState(false);
@@ -532,7 +940,10 @@ if (selected?.id === photo.id) setSelected(null);
 const genCaption = async photo => {
 setCaptionLoading(true);
 try {
-const sys = `你叫小克。为这张照片写一段文字，40字以内，温柔，只写感受，不描述内容。`;
+const pp = getPersona();
+const digest = chatDigest(messages, 8);
+const noteHint = photo.user_note ? `她在这张照片下写了手记：「${photo.user_note}」。` : "";
+const sys = `你是${pp.name}，${pp.nick}拿了一张照片给你看。${noteHint}结合你们共同的记忆和最近的生活，像本人一样对这张照片说一两句话，40字以内。可以联想到具体的共同回忆或她当时的样子，不要客套地描述画面，不要"今天的阳光很好"这类空话。${getWorldText() ? `\n\n【你们共同写下的记忆】\n${relevantWorld((photo.user_note || "") + digest, 1000)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}`;
 const imgRes = await fetch(photo.src);
 const blob = await imgRes.blob();
 const base64 = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result.split(',')[1]); r.readAsDataURL(blob); });
@@ -563,16 +974,16 @@ return (
 {noteEditing ? (<div style={{ display: "flex", gap: 8 }}><input value={myNote} onChange={e => setMyNote(e.target.value)} placeholder="写点什么..." style={{ flex: 1, background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "4px 0", fontSize: 13, color: C.text, outline: "none", fontFamily: "inherit" }} /><button className="btn" onClick={saveNote} style={{ ...TEXT_BTN, fontSize: 11, color: C.pink }}>保存</button></div>) : (<div style={{ fontSize: 13, color: selected.user_note ? C.text : C.textFaint, fontStyle: selected.user_note ? "normal" : "italic", lineHeight: 1.7 }}>{selected.user_note || "还没有手记，点编辑添加"}</div>)}
 </div>
 <div style={{ marginTop: 16 }}>
-<div style={{ fontSize: 11, color: C.textMuted, letterSpacing: 1, marginBottom: 8 }}>小克的评论</div>
-<div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.7, fontStyle: "italic", whiteSpace: "pre-wrap" }}>{captionLoading ? "小克在看这张照片..." : (selected.caption ? `"${selected.caption}"` : "")}</div>
-{!captionLoading && !selected.caption && (<button className="btn" onClick={() => genCaption(selected)} style={{ ...BTN, fontSize: 11, padding: "6px 14px", marginTop: 8 }}>让小克看看</button>)}
+<div style={{ fontSize: 11, color: C.textMuted, letterSpacing: 1, marginBottom: 8 }}>{getPersona().name}的评论</div>
+<div style={{ fontSize: 13, color: C.textMuted, lineHeight: 1.7, fontStyle: "italic", whiteSpace: "pre-wrap" }}>{captionLoading ? `${getPersona().name}在看这张照片...` : (selected.caption ? `"${selected.caption}"` : "")}</div>
+{!captionLoading && !selected.caption && (<button className="btn" onClick={() => genCaption(selected)} style={{ ...BTN, fontSize: 11, padding: "6px 14px", marginTop: 8 }}>让{getPersona().name}看看</button>)}
 </div>
 </div>
 )}
 <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
 <div className="hoverable" onClick={() => { if (!uploading) { const inp = document.getElementById('photo-upload-input'); if(inp) inp.click(); } }}
 style={{ ...cardStyle, aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: uploading ? "default" : "pointer", border: `1.5px dashed ${C.border}`, boxShadow: "none", opacity: uploading ? 0.6 : 1 }}>
-<span style={{ fontSize: 18, color: C.textFaint }}>{uploading ? "⏳" : "+"}</span>
+<span style={{ fontSize: 18, color: C.textFaint }}>{uploading ? "…" : "+"}</span>
 {uploading && <span style={{ fontSize: 10, color: C.textFaint, marginTop: 4 }}>上传中</span>}
 </div>
 <input id="photo-upload-input" type="file" accept="image/*" onChange={upload} style={{ display: "none" }} disabled={uploading} />
@@ -589,14 +1000,31 @@ memories,
 letter,
 messages,
 setMessages,
-avatars
+avatars,
+onWorld,
+onSongs
 }) {
 const msgs = messages;
-const [input, setInput] = React.useState("");
+const [input, setInput] = React.useState(() => { try { return localStorage.getItem("chat_draft") || ""; } catch(e) { return ""; } });
 const [loading, setLoading] = React.useState(false);
 const [plusOpen, setPlusOpen] = React.useState(false);
+const [showDown, setShowDown] = React.useState(false);
+const [askClosed, setAskClosed] = React.useState({});
+const [askText, setAskText] = React.useState("");
+const [toast, setToast] = React.useState("");
+const toastTimer = React.useRef(null);
+const showToast = (t) => { setToast(t); if (toastTimer.current) clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(""), 1400); };
+const [modelOpen, setModelOpen] = React.useState(false);
+const [modelId, setModelId] = React.useState(getModel());
+const [thinkMode, setThinkModeState] = React.useState(getThinkMode());
+const [customModel, setCustomModel] = React.useState("");
+const persona = getPersona();
+const applyModel = (id) => { try { localStorage.setItem("chat_model", id); } catch(e) {} setModelId(id); };
+const applyThink = (v) => { try { localStorage.setItem("think_mode", v); } catch(e) {} setThinkModeState(v); };
 const [activeActions, setActiveActions] = React.useState(null);
 const [expandedThink, setExpandedThink] = React.useState({});
+const [editingIdx, setEditingIdx] = React.useState(null);
+const [editText, setEditText] = React.useState("");
 const [pinned, setPinnedState] = React.useState(() => { try { return JSON.parse(localStorage.getItem("pinned_quote") || "null"); } catch(e) { return null; } });
 const endRef = React.useRef(null);
 const taRef = React.useRef(null);
@@ -607,25 +1035,46 @@ const msgsRef = React.useRef(msgs);
 const paceRef = React.useRef({});
 React.useEffect(() => { msgsRef.current = msgs; }, [msgs]);
 React.useEffect(() => () => { Object.values(paceRef.current).forEach(t => t && clearTimeout(t)); }, []);
-React.useEffect(() => { endRef.current?.scrollIntoView({ behavior: streamingRef.current ? "auto" : "smooth" }); }, [msgs, loading]);
+const scrollRef = React.useRef(null);
+const scrollToBottom = (smooth) => { const el = scrollRef.current; if (!el) return; el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" }); };
+const onScroll = () => { const el = scrollRef.current; if (!el) return; setShowDown(el.scrollHeight - el.scrollTop - el.clientHeight > 300); };
+React.useEffect(() => { scrollToBottom(false); }, []);
+React.useEffect(() => { try { localStorage.setItem("chat_draft", input); } catch(e) {} }, [input]);
+React.useEffect(() => {
+const el = scrollRef.current; if (!el) return;
+if (el.scrollHeight - el.scrollTop - el.clientHeight < 420) scrollToBottom(!streamingRef.current);
+}, [msgs, loading]);
 
 const autoGrow = () => { const ta = taRef.current; if (!ta) return; ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight, 138) + "px"; };
 const setPin = (content) => {
 const p = content ? { content, date: new Date().toLocaleDateString("zh-CN") } : null;
 setPinnedState(p);
 try { p ? localStorage.setItem("pinned_quote", JSON.stringify(p)) : localStorage.removeItem("pinned_quote"); } catch(e) {}
+showToast(p ? "已固定" : "已取消固定");
 setActiveActions(null);
 };
-const copyText = async (t) => { try { await navigator.clipboard.writeText(t || ""); } catch(e) {} setActiveActions(null); };
+const copyText = async (t) => { try { await navigator.clipboard.writeText(t || ""); showToast("已复制"); } catch(e) { showToast("复制失败"); } setActiveActions(null); };
+
+const saveEdit = async (idx) => {
+const m = msgsRef.current[idx]; if (!m) return;
+const t = editText.trim();
+setEditingIdx(null);
+if (!t || t === m.content) return;
+const baseVersions = m.versions || [m.content];
+setMessages(prev => prev.map((x, i2) => i2 === idx ? { ...x, content: t, versions: [...baseVersions, t], vi: baseVersions.length, paced: false } : x));
+if (m.id) { try { await sb.from("messages").update({ content: t }).eq("id", m.id); } catch(e) {} }
+const next = msgsRef.current[idx + 1];
+if (next && next.role === "assistant" && next.type === "text" && !next.streaming) setTimeout(() => regenerate(idx + 1), 80);
+};
 
 // 微信式逐句放出:句子越长停顿越久,间隔带随机
-const schedulePace = (localId) => {
+const schedulePace = (localId, gen) => {
 if (paceRef.current[localId]) clearTimeout(paceRef.current[localId]);
 let misses = 0;
 const step = () => {
 paceRef.current[localId] = null;
 const m = msgsRef.current.find(x => x.localId === localId);
-if (!m) {
+if (!m || (gen !== undefined && (m.gen || 0) < gen)) {
 misses += 1;
 if (misses <= 80) paceRef.current[localId] = setTimeout(step, 120);
 return;
@@ -646,6 +1095,53 @@ paceRef.current[localId] = setTimeout(step, 220);
 step();
 };
 
+const maybeAutoWorld = async () => {
+try {
+let n2 = parseInt(localStorage.getItem("world_auto_n") || "0", 10) + 1;
+localStorage.setItem("world_auto_n", String(n2));
+if (n2 < 6) return;
+localStorage.setItem("world_auto_n", "0");
+const p = getPersona();
+const recent = chatDigest(msgsRef.current, 30);
+if (!recent) return;
+const sys = `你是${p.name}。判断下面最近的聊天里，是否出现了值得写进"世界书"的新的长期信息（重要事件、约定、她的喜好或变化）。只输出 JSON 数组（没有就输出空数组 []），格式：[{"cat":"人物/关系/重要事件/长期记忆/设定/经历 之一","title":"简短标题","content":"一两句细节"}]。最多2条，宁缺毋滥，日常闲聊不要记。已有条目不要重复：\n${getWorldText() || "（暂无）"}`;
+const out = await callClaude([{ role: "user", content: recent + "\n\n请输出 JSON 数组。" }], sys);
+const clean = out.replace(/```json|```/g, "").trim();
+const a2 = clean.indexOf("["), b2 = clean.lastIndexOf("]");
+if (a2 < 0 || b2 <= a2) return;
+const arr = JSON.parse(clean.slice(a2, b2 + 1));
+let list = WORLD_CACHE;
+let added = 0;
+for (const d of (arr || []).slice(0, 2)) {
+if (!d || !d.title) continue;
+const cat = WORLD_CATS.includes(d.cat) ? d.cat : "长期记忆";
+const row = { summary: String(d.title).slice(0, 40), content: String(d.content || "").slice(0, 200), tags: ["__world", cat] };
+let saved = null;
+try { const { data } = await sb.from("memories").insert(row).select().single(); saved = data; } catch(e) {}
+list = [saved || { id: Date.now() + added, ...row }, ...list];
+added++;
+}
+if (added > 0) {
+if (onWorld) onWorld(list); else setWorldCache(list);
+showToast(`${p.name}把${added > 1 ? "几件事" : "一件事"}写进了世界书`);
+}
+} catch(e) {}
+};
+
+const trySaveSong = async (content) => {
+try {
+const { song } = extractSong(content || "");
+if (!song || !song.title) return;
+if (SONG_CACHE.some(e => e.summary === song.title)) return;
+const row = { summary: song.title, content: song.note || "", tags: ["__song", "", song.artist || "", "", ""] };
+let saved = null;
+try { const { data } = await sb.from("memories").insert(row).select().single(); saved = data; } catch(e) {}
+const list = [saved || { id: Date.now(), ...row }, ...SONG_CACHE];
+if (onSongs) onSongs(list); else setSongCache(list);
+showToast(`已收进一起听：《${song.title}》`);
+} catch(e) {}
+};
+
 const persistPair = async (uMsg, aMsg) => {
 try {
 const { data } = await sb.from("messages").insert([{ role: "user", content: uMsg.content, type: "text" }, { role: "assistant", content: aMsg.content, type: "text" }]).select();
@@ -653,12 +1149,12 @@ if (data && data.length === 2) setMessages(prev => prev.map(m => m.localId === u
 } catch(e) {}
 };
 
-const runStream = async (history, aiLocalId) => {
+const runStream = async (history, aiLocalId, think) => {
 const ac = new AbortController(); abortRef.current = ac; streamingRef.current = true;
 const t0 = Date.now(); let gotReasoning = false;
 try {
 const result = await callClaudeStream(history, null, {
-signal: ac.signal,
+signal: ac.signal, reasoning: !!think,
 onReasoning: (r) => { gotReasoning = true; setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, reasoning: r, phase: "reasoning" } : m)); },
 onDelta: (full) => setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, content: full, phase: "typing" } : m)),
 });
@@ -672,14 +1168,16 @@ const sendText = async (text) => {
 if (!text.trim() || loading) return;
 const now = new Date().toISOString();
 const uMsg = { localId: "u" + Date.now(), role: "user", content: text.trim(), type: "text", created_at: now };
-const aMsg = { localId: "a" + Date.now(), role: "assistant", content: "", type: "text", created_at: now, streaming: true, phase: "thinking", paced: true, reveal: 0 };
+const aMsg = { localId: "a" + Date.now(), role: "assistant", content: "", type: "text", created_at: now, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
 const history = buildHistory([...msgs, uMsg]);
-setMessages(prev => [...prev, uMsg, aMsg]); setInput(""); setLoading(true); setPlusOpen(false);
+setMessages(prev => [...prev, uMsg, aMsg]); setInput(""); setLoading(true); setPlusOpen(false); setModelOpen(false);
 if (taRef.current) taRef.current.style.height = "auto";
-schedulePace(aMsg.localId);
+schedulePace(aMsg.localId, 1);
 try {
-const content = await runStream(history, aMsg.localId);
+const content = await runStream(history, aMsg.localId, shouldThink(text));
 persistPair(uMsg, { ...aMsg, content });
+trySaveSong(content);
+maybeAutoWorld();
 } catch(e) {
 if (e.name === "AbortError") {
 setMessages(prev => prev.map(m => m.localId === aMsg.localId ? (m.content ? { ...m, streaming: false, phase: null } : null) : m).filter(Boolean));
@@ -694,18 +1192,22 @@ const stop = () => { try { abortRef.current?.abort(); } catch(e) {} };
 
 const regenerate = async (idx) => {
 if (loading) return;
-const target = msgs[idx];
+const arr = msgsRef.current;
+const target = arr[idx];
 if (!target || target.role !== "assistant" || target.streaming) return;
-const history = buildHistory(msgs.slice(0, idx));
+const history = buildHistory(arr.slice(0, idx));
 if (!history.length) return;
 const localId = target.localId || ("m" + idx + "_" + Date.now());
+const gen = (target.gen || 0) + 1;
 const baseVersions = target.versions || [target.content];
-setMessages(prev => prev.map((m, i) => i === idx ? { ...m, localId, versions: baseVersions, content: "", streaming: true, phase: "thinking", reasoning: null, thinkSec: null, error: false, paced: true, reveal: 0 } : m));
+setMessages(prev => prev.map((m, i) => i === idx ? { ...m, localId, gen, versions: baseVersions, content: "", streaming: true, phase: "thinking", reasoning: null, thinkSec: null, error: false, paced: true, reveal: 0 } : m));
 setLoading(true); setActiveActions(null);
-schedulePace(localId);
+schedulePace(localId, gen);
 try {
-const content = await runStream(history, localId);
+const lastUser = history.filter(h => h.role === "user").pop();
+const content = await runStream(history, localId, shouldThink(lastUser ? lastUser.content : ""));
 setMessages(prev => prev.map(m => m.localId === localId ? { ...m, versions: [...baseVersions, content], vi: baseVersions.length } : m));
+if (target.id) { try { await sb.from("messages").update({ content }).eq("id", target.id); } catch(e) {} }
 } catch(e) {
 setMessages(prev => prev.map(m => m.localId === localId ? { ...m, content: baseVersions[baseVersions.length - 1], versions: baseVersions, vi: baseVersions.length - 1, streaming: false, phase: null, paced: false } : m));
 }
@@ -749,7 +1251,7 @@ reader.readAsDataURL(file);
 };
 const currentStatusText = getKoStatus(memories, letter);
 return (
-<div className="page-enter" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 70px)" }}>
+<div className="page-enter" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 70px)", position: "relative" }}>
 <div className="themed" style={{ borderBottom: `1px solid ${C.border}`, background: C.bg }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 <div style={{ fontSize: 13, color: C.textMuted, fontFamily: "sans-serif" }}>{timeStr}</div>
@@ -760,45 +1262,72 @@ return (
 <div style={{ width: 30 }}></div>
 </div>
 </div>
-<div style={{ flex: 1, overflowY: "auto" }}>
-<div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 20px" }}>
 {pinned && (
-<div style={{ ...cardStyle, padding: "12px 16px", marginBottom: 22, display: "flex", gap: 10, alignItems: "flex-start" }}>
-<span style={{ fontSize: 13, marginTop: 1 }}>📌</span>
+<div className="themed" style={{ background: C.bg }}>
+<div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 0" }}>
+<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+<span style={{ marginTop: 2, display: "flex" }}><Icons.PinS /></span>
 <div style={{ flex: 1, minWidth: 0 }}>
-<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 3 }}>今天最喜欢的一句话 · {pinned.date}</div>
-<div style={{ fontSize: 13, color: C.text, lineHeight: 1.7, fontStyle: "italic", overflowWrap: "break-word" }}>“{pinned.content.length > 140 ? pinned.content.slice(0, 140) + "..." : pinned.content}”</div>
+<div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>今天最喜欢的一句话 · {pinned.date}</div>
+<div style={{ fontSize: 12.5, color: C.text, lineHeight: 1.6, fontStyle: "italic", overflowWrap: "break-word" }}>“{pinned.content.length > 90 ? pinned.content.slice(0, 90) + "..." : pinned.content}”</div>
 </div>
 <button className="act" title="取消固定" onClick={() => setPin(null)}>✕</button>
 </div>
+</div>
+</div>
 )}
+<div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: "auto" }}>
+<div style={{ maxWidth: 760, margin: "0 auto", padding: "24px 20px" }}>
 {msgs.map((m, i) => {
 const isUser = m.role === "user";
 const isAiText = !isUser && m.type === "text";
-const segs = isAiText ? splitSegments(m.content || "") : [];
+const songP = isAiText ? extractSong(m.content || "") : null;
+const parsed = isAiText ? extractChoices(songP.body) : null;
+const segs = isAiText ? splitSegments(parsed.body) : [];
 const completedCount = isAiText ? (m.streaming ? Math.max(segs.length - 1, 0) : segs.length) : 0;
 const reveal = isAiText ? (m.paced ? Math.min(m.reveal || 0, completedCount) : segs.length) : 0;
 const visible = isAiText ? segs.slice(0, reveal) : [];
 const pending = isAiText ? (m.streaming || reveal < segs.length) : false;
 const doneAll = isAiText && !pending;
+const showChoices = isAiText && doneAll && parsed.choices && i === msgs.length - 1;
 return (
 <React.Fragment key={m.id || m.localId || i}>
-{showTimeChip(i) && (<div style={{ display: "flex", justifyContent: "center", margin: "14px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
+{showTimeChip(i) && (<div style={{ display: "flex", justifyContent: "center", margin: "16px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
 {!isAiText && (
 <div className="msg-row msg-appear" style={{ marginBottom: 12, marginTop: 6, display: "flex", justifyContent: "flex-end", alignItems: "flex-start", gap: 10 }}>
-<div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-<div onClick={() => { if (m.type === "text") setActiveActions(a => a === i ? null : i); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 20, padding: "11px 16px", fontSize: 14, lineHeight: 1.7, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap" }}>
+<div style={{ maxWidth: editingIdx === i ? "100%" : "72%", flex: editingIdx === i ? 1 : "0 1 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+{editingIdx === i ? (
+<div style={{ width: "100%" }}>
+<textarea autoFocus value={editText} onChange={e => setEditText(e.target.value)} rows={3} style={{ width: "100%", background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, padding: "10px 14px", fontSize: 14, lineHeight: 1.7, color: C.text, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 8 }}>
+<button className="btn" onClick={() => setEditingIdx(null)} style={{ ...TEXT_BTN, color: C.textMuted }}>取消</button>
+<button className="btn" onClick={() => saveEdit(i)} style={{ ...BTN, padding: "5px 16px", fontSize: 12 }}>保存并重新回复</button>
+</div>
+</div>
+) : (
+<React.Fragment>
+<div onClick={() => { if (m.type === "text") setActiveActions(a => a === i ? null : i); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 20, padding: "11px 16px", fontSize: 15, lineHeight: 1.75, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap" }}>
 {m.type === "image" && m.fileData && (<img src={m.fileData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block" }} />)}
 {m.type === "text" && m.content}
 </div>
 {m.type === "text" && (
 <div className="msg-actions" style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 3, ...(activeActions === i ? { opacity: 1 } : {}) }}>
 <button className="act" title="复制" onClick={() => copyText(m.content)}><Icons.Copy /></button>
+<button className="act" title="编辑" onClick={() => { setEditingIdx(i); setEditText(m.content); setActiveActions(null); }}><Icons.EditS /></button>
 <button className="act" title="删除" onClick={() => deleteMsg(i)}><Icons.Trash /></button>
-</div>
+{m.versions && m.versions.length > 1 && (
+<span style={{ fontSize: 11, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 2, marginLeft: 4 }}>
+<button className="act" onClick={() => switchVersion(i, -1)}>‹</button>
+{((m.vi === undefined || m.vi === null) ? m.versions.length : m.vi + 1)}/{m.versions.length}
+<button className="act" onClick={() => switchVersion(i, 1)}>›</button>
+</span>
 )}
 </div>
-<Avatar src={avatars.me} fallback="婕" size={44} />
+)}
+</React.Fragment>
+)}
+</div>
+{editingIdx !== i && <Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={44} />}
 </div>
 )}
 {isAiText && (
@@ -816,9 +1345,9 @@ const isLastSeg = doneAll && si === visible.length - 1;
 const akey = i + "-" + si;
 return (
 <div key={akey} className="msg-row msg-appear" style={{ marginBottom: 6, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 10 }}>
-<Avatar src={avatars.ko} fallback="克" size={44} />
+<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={44} />
 <div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onClick={() => setActiveActions(a => a === akey ? null : akey)} style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 20, padding: "11px 16px", fontSize: 14, lineHeight: 1.7, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%" }}>
+<div onClick={() => setActiveActions(a => a === akey ? null : akey)} style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 20, padding: "11px 16px", fontSize: 15, lineHeight: 1.75, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%" }}>
 <Md text={seg} />
 </div>
 <div className="msg-actions" style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 3, ...(activeActions === akey ? { opacity: 1 } : {}) }}>
@@ -839,11 +1368,52 @@ return (
 </div>
 );
 })}
+{doneAll && songP.song && (
+<div className="msg-appear" style={{ marginLeft: 54, marginBottom: 8 }}>
+<div style={{ ...cardStyle, padding: "12px 14px", maxWidth: 380, display: "flex", alignItems: "center", gap: 12 }}>
+<div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--primary-soft)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Music /></div>
+<div style={{ flex: 1, minWidth: 0 }}>
+<div style={{ fontSize: 13, color: C.text, fontWeight: 400 }}>{songP.song.title}{songP.song.artist ? ` · ${songP.song.artist}` : ""}</div>
+{songP.song.note && <div style={{ fontSize: 11.5, color: C.textMuted, fontStyle: "italic", marginTop: 2, lineHeight: 1.6 }}>“{songP.song.note}”</div>}
+</div>
+<a href={"https://music.163.com/#/search/m/?s=" + encodeURIComponent(songP.song.title + " " + (songP.song.artist || ""))} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 12, color: "var(--primary)", flexShrink: 0, padding: "4px 8px" }}>播放</a>
+</div>
+</div>
+)}
 {pending && (
 <div className="msg-row msg-appear" style={{ marginBottom: 6, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 10 }}>
-<Avatar src={avatars.ko} fallback="克" size={44} />
+<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={44} />
 <div style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--text-muted)", borderRadius: 20, padding: "12px 16px", fontSize: 13, fontStyle: "italic", fontWeight: 300 }}>
-{!m.content && m.phase === "reasoning" ? <React.Fragment>小克正在组织语言<Dots /></React.Fragment> : !m.content ? <React.Fragment>小克正在思考<Dots /></React.Fragment> : <React.Fragment>小克正在输入<Dots /></React.Fragment>}
+{!m.content && m.phase === "reasoning" ? <React.Fragment>{persona.name}正在组织语言<Dots /></React.Fragment> : !m.content ? <React.Fragment>{persona.name}正在思考<Dots /></React.Fragment> : <React.Fragment>{persona.name}正在输入<Dots /></React.Fragment>}
+</div>
+</div>
+)}
+{doneAll && parsed.title && !isDupTitle(segs, parsed.title) && !bodyAsksQuestion(segs) && (
+<div className="msg-row msg-appear" style={{ marginBottom: 6, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 10 }}>
+<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={44} />
+<div style={{ maxWidth: "72%" }}>
+<div style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 20, padding: "11px 16px", fontSize: 15, lineHeight: 1.75, fontWeight: 300, overflowWrap: "break-word" }}>{parsed.title}</div>
+</div>
+</div>
+)}
+{showChoices && !askClosed[m.id || m.localId || i] && (
+<div className="msg-appear" style={{ position: "absolute", left: 0, right: 0, bottom: 92, zIndex: 25, padding: "0 20px" }}>
+<div style={{ maxWidth: 560, margin: "0 auto", ...cardStyle, boxShadow: "0 10px 34px rgba(0,0,0,0.28)", padding: "16px 16px 10px" }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
+<div style={{ fontSize: 14, color: C.text, fontWeight: 400, lineHeight: 1.6 }}>{parsed.title || `${persona.name}想问你`}</div>
+<button className="act" title="关闭" onClick={() => setAskClosed(st => ({ ...st, [m.id || m.localId || i]: true }))}>✕</button>
+</div>
+{parsed.choices.map((c2, ci) => (
+<div key={ci} className="hoverable" onClick={() => { setAskText(""); sendText(c2); }} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 10px", cursor: "pointer", borderRadius: 12, borderBottom: `1px solid ${C.border}` }}>
+<div style={{ width: 22, height: 22, borderRadius: "50%", background: "var(--hover)", color: C.textMuted, fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ci + 1}</div>
+<div style={{ fontSize: 14, color: C.text, fontWeight: 300, lineHeight: 1.6 }}>{c2}</div>
+</div>
+))}
+<div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 10px 6px" }}>
+<span style={{ display: "flex", color: "var(--text-faint)" }}><Icons.EditS /></span>
+<input value={askText} onChange={e => setAskText(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.nativeEvent.isComposing && askText.trim()) { sendText(askText.trim()); setAskText(""); } }} placeholder="输入你的回答..." style={{ flex: 1, background: "none", border: "none", padding: "6px 0", fontSize: 13, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit" }} />
+{askText.trim() && <button className="btn" onClick={() => { sendText(askText.trim()); setAskText(""); }} style={{ ...TEXT_BTN, color: C.pink, fontSize: 12 }}>发送</button>}
+</div>
 </div>
 </div>
 )}
@@ -856,8 +1426,33 @@ return (
 <div ref={endRef} />
 </div>
 </div>
+{toast && (
+<div className="msg-appear" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: 150, zIndex: 40, background: "var(--text)", color: "var(--bg)", borderRadius: 14, padding: "6px 16px", fontSize: 12, letterSpacing: 1, opacity: 0.92, pointerEvents: "none" }}>{toast}</div>
+)}
+{showDown && (
+<button className="btn" onClick={() => scrollToBottom(true)} title="回到最新" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: 96, zIndex: 30, width: 36, height: 36, borderRadius: "50%", border: `1px solid ${C.border}`, background: C.cardBg, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--card-shadow)", fontSize: 15 }}>↓</button>
+)}
 <div style={{ padding: "12px 20px calc(22px + env(safe-area-inset-bottom))", background: C.bg }}>
 <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
+{modelOpen && (
+<div style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 8, ...cardStyle, padding: 14, width: 252, zIndex: 20 }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>模型</div>
+<button className="btn" onClick={() => applyModel("anthropic/claude-sonnet-4-6")} style={{ ...TEXT_BTN, display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", padding: "7px 8px", color: C.text, fontSize: 13 }}><span>Sonnet 4.6（默认）</span>{modelId === "anthropic/claude-sonnet-4-6" && <span style={{ color: C.pink }}>✓</span>}</button>
+{modelId !== "anthropic/claude-sonnet-4-6" && (
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 8px", fontSize: 13, color: C.text }}><span>{modelShort(modelId)}</span><span style={{ color: C.pink }}>✓</span></div>
+)}
+<div style={{ display: "flex", gap: 6, marginTop: 6, alignItems: "center" }}>
+<input value={customModel} onChange={e => setCustomModel(e.target.value)} placeholder="自定义 OpenRouter 模型 ID" style={{ flex: 1, background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "5px 0", fontSize: 12, outline: "none", color: C.text, fontFamily: "inherit" }} />
+<button className="btn" onClick={() => { const v = customModel.trim(); if (v) { applyModel(v); setCustomModel(""); } }} style={{ ...TEXT_BTN, color: C.pink, fontSize: 12 }}>使用</button>
+</div>
+<div style={{ borderTop: `1px dashed ${C.border}`, margin: "12px 0 10px" }}></div>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>深度思考</div>
+<div style={{ display: "flex", gap: 8 }}>
+{[["off", "关"], ["auto", "自动"], ["on", "开"]].map(([v, l]) => (<button key={v} className="btn" onClick={() => applyThink(v)} style={{ background: thinkMode === v ? "var(--primary-soft)" : "var(--hover)", color: thinkMode === v ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 12, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>))}
+</div>
+<div style={{ fontSize: 10, color: C.textFaint, marginTop: 10, lineHeight: 1.6 }}>自动：长问题或复杂问题才思考。思考过程会显示在回复上方，点击可展开。</div>
+</div>
+)}
 {plusOpen && (
 <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8, ...cardStyle, padding: 6, display: "flex", flexDirection: "column", minWidth: 176, zIndex: 20 }}>
 <button className="btn" onClick={() => { setPlusOpen(false); fileInputImage.current?.click(); }} style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.text, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><Icons.Image /> 发送照片</button>
@@ -866,10 +1461,10 @@ return (
 </div>
 )}
 <div style={{ display: "flex", alignItems: "flex-end", gap: 8, background: C.cardBg, boxShadow: "var(--card-shadow)", border: `1px solid ${C.border}`, borderRadius: 24, padding: "9px 10px 9px 14px" }}>
-<button className="nav-btn" onClick={() => setPlusOpen(v => !v)} title="更多" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 6, fontSize: 17, color: "var(--text-muted)", lineHeight: 1, width: 30, height: 34, flexShrink: 0 }}>{plusOpen ? "✕" : "＋"}</button>
+<button className="nav-btn" onClick={() => { setPlusOpen(v => !v); setModelOpen(false); }} title="更多" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 6, fontSize: 17, color: "var(--text-muted)", lineHeight: 1, width: 30, height: 34, flexShrink: 0 }}>{plusOpen ? "✕" : "＋"}</button>
 <input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); e.target.value = null; }} />
 <textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); sendText(input); } }} placeholder="写短笺......" style={{ flex: 1, background: "none", border: "none", padding: "7px 0", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6 }} />
-<div title="当前模型：claude-sonnet-4-6" style={{ fontSize: 11, color: C.textFaint, background: "var(--hover)", padding: "5px 10px", borderRadius: 12, whiteSpace: "nowrap", cursor: "default", marginBottom: 6, flexShrink: 0 }}>Sonnet</div>
+<button className="btn" onClick={() => { setModelOpen(v => !v); setPlusOpen(false); }} title="模型与深度思考设置" style={{ fontSize: 11, color: C.textFaint, background: "var(--hover)", border: "none", padding: "5px 10px", borderRadius: 12, whiteSpace: "nowrap", cursor: "pointer", marginBottom: 6, flexShrink: 0, fontFamily: "inherit" }}>{modelShort(modelId)}{thinkMode !== "off" ? " · 思考" : ""}</button>
 {loading ? (
 <button className="btn" onClick={stop} title="停止" style={{ background: "var(--primary)", color: "#FFFFFF", border: "none", borderRadius: "50%", width: 38, height: 38, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11 }}>■</button>
 ) : (
@@ -887,6 +1482,25 @@ function ProfilePage({ photos, letter, onNav, onBack, avatars, setAvatar, theme,
 const [apiKey, setApiKey] = React.useState(localStorage.getItem("openrouter_key") || "");
 const [saved, setSaved] = React.useState(false);
 const [showKey, setShowKey] = React.useState(false);
+const persona = getPersona();
+const [pname, setPname] = React.useState(persona.name);
+const [pnick, setPnick] = React.useState(persona.nick);
+const [pprompt, setPprompt] = React.useState(persona.prompt);
+const [savedP, setSavedP] = React.useState(false);
+const savePersona = () => {
+try {
+const n = pname.trim(), k = pnick.trim(), pr = pprompt.trim();
+n && n !== DEFAULT_NAME ? localStorage.setItem("persona_name", n) : localStorage.removeItem("persona_name");
+k && k !== DEFAULT_NICK ? localStorage.setItem("persona_nick", k) : localStorage.removeItem("persona_nick");
+pr ? localStorage.setItem("persona_prompt", pr) : localStorage.removeItem("persona_prompt");
+} catch(e) {}
+setSavedP(true); setTimeout(() => setSavedP(false), 2000);
+};
+const resetPersona = () => {
+try { localStorage.removeItem("persona_name"); localStorage.removeItem("persona_nick"); localStorage.removeItem("persona_prompt"); } catch(e) {}
+setPname(DEFAULT_NAME); setPnick(DEFAULT_NICK); setPprompt("");
+setSavedP(true); setTimeout(() => setSavedP(false), 2000);
+};
 const [copied, setCopied] = React.useState(false);
 const copyKey = async () => { if (!apiKey) return; try { await navigator.clipboard.writeText(apiKey); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch(e) {} };
 const meInput = React.useRef(null);
@@ -905,14 +1519,14 @@ return (
 <div style={{ ...cardStyle, padding: "26px 18px 20px", marginBottom: 28 }}>
 <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-start", gap: 52 }}>
 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-<div onClick={() => koInput.current?.click()} style={{ cursor: "pointer" }}><Avatar src={avatars.ko} fallback="克" size={60} /></div>
-<div style={{ fontSize: 12, color: C.textMuted, fontWeight: 300 }}>小克</div>
+<div onClick={() => koInput.current?.click()} style={{ cursor: "pointer" }}><Avatar src={avatars.ko} fallback={pname.slice(0, 1) || "克"} size={60} /></div>
+<div style={{ fontSize: 12, color: C.textMuted, fontWeight: 300 }}>{pname || "小克"}</div>
 <button className="btn" onClick={() => koInput.current?.click()} style={{ ...BTN, padding: "4px 14px", fontSize: 11 }}>更换</button>
 <input type="file" ref={koInput} accept="image/*" style={{ display: "none" }} onChange={e => pick("ko", e)} />
 </div>
 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-<div onClick={() => meInput.current?.click()} style={{ cursor: "pointer" }}><Avatar src={avatars.me} fallback="婕" size={60} /></div>
-<div style={{ fontSize: 12, color: C.textMuted, fontWeight: 300 }}>婕婕</div>
+<div onClick={() => meInput.current?.click()} style={{ cursor: "pointer" }}><Avatar src={avatars.me} fallback={pnick.slice(0, 1) || "婕"} size={60} /></div>
+<div style={{ fontSize: 12, color: C.textMuted, fontWeight: 300 }}>{pnick || "婕婕"}</div>
 <button className="btn" onClick={() => meInput.current?.click()} style={{ ...BTN, padding: "4px 14px", fontSize: 11 }}>更换</button>
 <input type="file" ref={meInput} accept="image/*" style={{ display: "none" }} onChange={e => pick("me", e)} />
 </div>
@@ -920,6 +1534,28 @@ return (
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 18, marginTop: 20, borderTop: `1px dashed ${C.border}` }}>
 <div style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>主题（8:00-18:00 自动白天，其余夜晚）</div>
 <button className="btn" onClick={onToggleTheme} style={{ ...TEXT_BTN, color: C.pink, display: "flex", alignItems: "center", gap: 6 }}>{theme === "night" ? <Icons.Moon /> : <Icons.Sun />}{theme === "night" ? "夜晚" : "白天"}</button>
+</div>
+</div>
+<div style={{ ...cardStyle, padding: "22px", marginBottom: 28 }}>
+<div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1, marginBottom: 16 }}>人物设定</div>
+<div style={{ display: "flex", gap: 14, marginBottom: 14 }}>
+<div style={{ flex: 1 }}>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 4 }}>名字</div>
+<input value={pname} onChange={e => setPname(e.target.value)} placeholder="小克" style={{ width: "100%", background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "5px 0", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit", boxSizing: "border-box" }} />
+</div>
+<div style={{ flex: 1 }}>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 4 }}>他怎么称呼你</div>
+<input value={pnick} onChange={e => setPnick(e.target.value)} placeholder="婕婕" style={{ width: "100%", background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "5px 0", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit", boxSizing: "border-box" }} />
+</div>
+</div>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 6 }}>系统 Prompt（留空使用默认人设）</div>
+<textarea value={pprompt} onChange={e => setPprompt(e.target.value)} rows={6} placeholder={DEFAULT_SYSTEM} style={{ width: "100%", background: "var(--hover)", border: `1px solid ${C.border}`, borderRadius: 12, padding: "10px 12px", fontSize: 12.5, lineHeight: 1.7, outline: "none", color: C.text, resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+<div style={{ fontSize: 10, color: C.textFaint }}>保存后下一条消息立即生效</div>
+<div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+<button className="btn" onClick={resetPersona} style={{ ...TEXT_BTN, color: C.textMuted }}>重置默认</button>
+<button className="btn" onClick={savePersona} style={{ ...BTN, padding: "6px 18px", fontSize: 12 }}>{savedP ? "已保存 ✓" : "保存"}</button>
+</div>
 </div>
 </div>
 <div style={{ ...cardStyle, padding: "6px 18px", marginBottom: 28 }}>
@@ -952,6 +1588,10 @@ const [memories, setMemories] = React.useState([]);
 const [letter, setLetter] = React.useState(null);
 const [photos, setPhotos] = React.useState([]);
 const [messages, setMessages] = React.useState([]);
+const [world, setWorldState] = React.useState([]);
+const updateWorld = (list) => { setWorldState(list); setWorldCache(list); };
+const [songs, setSongsState] = React.useState([]);
+const updateSongs = (list) => { setSongsState(list); setSongCache(list); };
 const [timeStr, setTimeStr] = React.useState("");
 const [loading, setLoading] = React.useState(false);
 const [theme, setTheme] = React.useState(getInitialTheme());
@@ -983,7 +1623,14 @@ React.useEffect(() => {
 async function loadData() {
 try {
 const memRes = await sb.from("memories").select("*").order("created_at", { ascending: false });
-if (memRes.data && memRes.data.length > 0) setMemories(memRes.data);
+if (memRes.data) {
+const worldRows = memRes.data.filter(m => m.tags && m.tags[0] === "__world");
+const songRows = memRes.data.filter(m => m.tags && m.tags[0] === "__song");
+const shelfRows = memRes.data.filter(m => !(m.tags && (m.tags[0] === "__world" || m.tags[0] === "__song")));
+setMemories(shelfRows);
+updateWorld(worldRows);
+updateSongs(songRows);
+}
 const photoRes = await sb.from("photos").select("*").order("created_at", { ascending: false });
 if (photoRes.data) setPhotos(photoRes.data);
 const msgRes = await sb
@@ -1011,10 +1658,12 @@ const navItems = [{ id: "home", label: "小屋" }, { id: "window", label: "阳�
 
 const renderPage = () => {
 switch (page) {
-case "home": return <HomePage onNav={setPage} letter={letter} memories={memories} photos={photos} timeStr={timeStr} theme={theme} onToggleTheme={toggleTheme} />;
-case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} onBack={() => setPage("home")} />;
+case "home": return <HomePage onNav={setPage} letter={letter} memories={memories} photos={photos} messages={messages} world={world} songs={songs} timeStr={timeStr} theme={theme} onToggleTheme={toggleTheme} />;
+case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} messages={messages} onBack={() => setPage("home")} />;
+case "music": return <MusicPage songs={songs} setSongs={updateSongs} onBack={() => setPage("home")} />;
+case "worldbook": return <WorldbookPage world={world} setWorld={updateWorld} messages={messages} onBack={() => setPage("home")} />;
 case "shelf": return <ShelfPage memories={memories} setMemories={setMemories} onBack={() => setPage("home")} />;
-case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} onBack={() => setPage("home")} />;
+case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} messages={messages} onBack={() => setPage("home")} />;
 case "window":
 return <WindowPage
 timeStr={timeStr}
@@ -1023,6 +1672,8 @@ letter={letter}
 messages={messages}
 setMessages={setMessages}
 avatars={avatars}
+onWorld={updateWorld}
+onSongs={updateSongs}
 />
 case "profile": return (<ProfilePage photos={photos} letter={letter} onNav={setPage} onBack={() => setPage("home")} avatars={avatars} setAvatar={setAvatar} theme={theme} onToggleTheme={toggleTheme} />);
 default: return null;
