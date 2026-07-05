@@ -382,6 +382,25 @@ return out;
 }
 
 function getAvatar(who) { return localStorage.getItem("avatar_" + who) || (who === "ko" ? "icon.jpg" : ""); }
+function compressImage(file, maxSize, q) {
+return new Promise(resolve => {
+const img = new Image();
+const r = new FileReader();
+r.onload = e => {
+img.onload = () => {
+let w = img.width, h = img.height;
+const sc = Math.min(1, maxSize / Math.max(w, h));
+w = Math.round(w * sc); h = Math.round(h * sc);
+const c = document.createElement("canvas"); c.width = w; c.height = h;
+c.getContext("2d").drawImage(img, 0, 0, w, h);
+resolve(c.toDataURL("image/jpeg", q));
+};
+img.src = e.target.result;
+};
+r.readAsDataURL(file);
+});
+}
+
 function fileToAvatar(file) {
 return new Promise(resolve => {
 const img = new Image();
@@ -507,7 +526,7 @@ if (letterToday) feed.push("今天收到了一封信");
 if (photosToday > 0) feed.push(`相册新增了 ${photosToday} 张照片`);
 if (chatToday > 0) feed.push(`今天和${persona.name}聊了 ${chatToday} 条消息`);
 return (
-<div className="page-enter" style={{ background: C.bg, minHeight: "100vh" }}>
+<div className="page-enter" style={{ background: C.bg, minHeight: "100dvh" }}>
 <TopBar timeStr={timeStr} theme={theme} onToggleTheme={onToggleTheme} />
 <div style={{ padding: "26px 26px 46px" }}>
 <div className="rise" style={{ ...cardStyle, padding: "26px 24px 20px", marginBottom: 18 }}>
@@ -620,7 +639,7 @@ try { await sb.from("memories").delete().eq("id", id); } catch(e) {}
 setWorld(world.filter(e => e.id !== id));
 };
 return (
-<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
 <div style={{ display: "flex", alignItems: "center", gap: 12 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6 }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>世界书</div></div>
 <div style={{ display: "flex", gap: 8 }}>
@@ -719,7 +738,7 @@ try { await sb.from("memories").delete().eq("id", e.id); } catch(er) {}
 setSongs(songs.filter(x => x.id !== e.id));
 };
 return (
-<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
 <div style={{ display: "flex", alignItems: "center", gap: 12 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6 }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>一起听</div></div>
 <button className="btn" onClick={() => setShowAdd(v => !v)} style={{ ...BTN, padding: "6px 16px", fontSize: 12 }}>{showAdd ? "取消" : "添加一首"}</button>
@@ -783,7 +802,7 @@ setLetter({ content: `今天的信写到一半，被风吹走了。\n明天再�
 setLoading(false);
 };
 return (
-<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
 <PageHeader title="信箱" onBack={onBack} />
 {letter ? (
 <div style={{ ...cardStyle, padding: "32px 24px" }}>
@@ -852,7 +871,7 @@ setMemories(prev => prev.filter(m => m.id !== id));
 }
 };
 return (
-<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 28 }}>
 <div style={{ display: "flex", alignItems: "center", gap: 12 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6 }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>记忆书架</div></div>
 <button className="btn" onClick={() => { setShowAdd(!showAdd); setEditId(null); setTitle(""); setContent(""); setCustomDate(todayStr()); }} style={{ ...BTN, padding: "6px 16px", fontSize: 12 }}>{showAdd ? "取消" : "记一笔"}</button>
@@ -957,7 +976,7 @@ setCaptionLoading(false);
 };
 
 return (
-<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100vh" }}>
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
 <PageHeader title="岁月相册" onBack={onBack} />
 {selected && (
 <div style={{ ...cardStyle, padding: "16px", marginBottom: 28, position: "relative" }}>
@@ -1242,16 +1261,31 @@ if (d.toDateString() === now.toDateString()) return hm;
 return `${d.getFullYear() !== now.getFullYear() ? d.getFullYear() + "年" : ""}${d.getMonth() + 1}月${d.getDate()}日 ${hm}`;
 };
 
-const uploadImage = (file) => {
+const sendImage = async (file) => {
 if (!file || loading) return;
+const dataUrl = await compressImage(file, 1024, 0.82);
 const now = new Date().toISOString();
-const reader = new FileReader();
-reader.onload = (ev) => { setMessages(prev => [...prev, { role: "user", content: "", type: "image", fileData: ev.target.result, created_at: now }]); setLoading(true); setTimeout(() => { setMessages(prev => [...prev, { role: "assistant", content: "照片看到了。", type: "text", created_at: new Date().toISOString() }]); setLoading(false); }, 800); };
-reader.readAsDataURL(file);
+const uMsg = { localId: "ui" + Date.now(), role: "user", content: "", type: "image", fileData: dataUrl, created_at: now };
+const aMsg = { localId: "ai" + Date.now(), role: "assistant", content: "", type: "text", created_at: now, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
+const history = [...buildHistory(msgs), { role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: "（我拍了一张照片给你看）" }] }];
+setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false); setModelOpen(false);
+schedulePace(aMsg.localId, 1);
+try {
+const content = await runStream(history, aMsg.localId, false);
+try { await sb.from("messages").insert([{ role: "user", content: "（发了一张照片给你看）", type: "text" }, { role: "assistant", content, type: "text" }]); } catch(e) {}
+trySaveSong(content);
+} catch(e) {
+if (e.name === "AbortError") {
+setMessages(prev => prev.map(m => m.localId === aMsg.localId ? (m.content ? { ...m, streaming: false, phase: null } : null) : m).filter(Boolean));
+} else {
+setMessages(prev => prev.map(m => m.localId === aMsg.localId ? { ...m, content: "照片好像没送到，再发一次试试。（" + e.message + "）", streaming: false, phase: null, error: true, paced: false } : m));
+}
+}
+setLoading(false);
 };
 const currentStatusText = getKoStatus(memories, letter);
 return (
-<div className="page-enter" style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 70px)", position: "relative" }}>
+<div className="page-enter" style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 74px - env(safe-area-inset-top))", position: "relative" }}>
 <div className="themed" style={{ borderBottom: `1px solid ${C.border}`, background: C.bg }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 <div style={{ fontSize: 13, color: C.textMuted, fontFamily: "sans-serif" }}>{timeStr}</div>
@@ -1397,7 +1431,7 @@ return (
 </div>
 )}
 {showChoices && !askClosed[m.id || m.localId || i] && (
-<div className="msg-appear" style={{ position: "absolute", left: 0, right: 0, bottom: 92, zIndex: 25, padding: "0 20px" }}>
+<div className="msg-appear" style={{ position: "absolute", left: 0, right: 0, bottom: "calc(100px + env(safe-area-inset-bottom))", zIndex: 25, padding: "0 20px" }}>
 <div style={{ maxWidth: 560, margin: "0 auto", ...cardStyle, boxShadow: "0 10px 34px rgba(0,0,0,0.28)", padding: "16px 16px 10px" }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 4 }}>
 <div style={{ fontSize: 14, color: C.text, fontWeight: 400, lineHeight: 1.6 }}>{parsed.title || `${persona.name}想问你`}</div>
@@ -1427,10 +1461,10 @@ return (
 </div>
 </div>
 {toast && (
-<div className="msg-appear" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: 150, zIndex: 40, background: "var(--text)", color: "var(--bg)", borderRadius: 14, padding: "6px 16px", fontSize: 12, letterSpacing: 1, opacity: 0.92, pointerEvents: "none" }}>{toast}</div>
+<div className="msg-appear" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: "calc(158px + env(safe-area-inset-bottom))", zIndex: 40, background: "var(--text)", color: "var(--bg)", borderRadius: 14, padding: "6px 16px", fontSize: 12, letterSpacing: 1, opacity: 0.92, pointerEvents: "none" }}>{toast}</div>
 )}
 {showDown && (
-<button className="btn" onClick={() => scrollToBottom(true)} title="回到最新" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: 96, zIndex: 30, width: 36, height: 36, borderRadius: "50%", border: `1px solid ${C.border}`, background: C.cardBg, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--card-shadow)", fontSize: 15 }}>↓</button>
+<button className="btn" onClick={() => scrollToBottom(true)} title="回到最新" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: "calc(106px + env(safe-area-inset-bottom))", zIndex: 30, width: 36, height: 36, borderRadius: "50%", border: `1px solid ${C.border}`, background: C.cardBg, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--card-shadow)", fontSize: 15 }}>↓</button>
 )}
 <div style={{ padding: "12px 20px calc(22px + env(safe-area-inset-bottom))", background: C.bg }}>
 <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
@@ -1462,7 +1496,7 @@ return (
 )}
 <div style={{ display: "flex", alignItems: "flex-end", gap: 8, background: C.cardBg, boxShadow: "var(--card-shadow)", border: `1px solid ${C.border}`, borderRadius: 24, padding: "9px 10px 9px 14px" }}>
 <button className="nav-btn" onClick={() => { setPlusOpen(v => !v); setModelOpen(false); }} title="更多" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 6, fontSize: 17, color: "var(--text-muted)", lineHeight: 1, width: 30, height: 34, flexShrink: 0 }}>{plusOpen ? "✕" : "＋"}</button>
-<input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) uploadImage(e.target.files[0]); e.target.value = null; }} />
+<input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = null; }} />
 <textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); sendText(input); } }} placeholder="写短笺......" style={{ flex: 1, background: "none", border: "none", padding: "7px 0", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6 }} />
 <button className="btn" onClick={() => { setModelOpen(v => !v); setPlusOpen(false); }} title="模型与深度思考设置" style={{ fontSize: 11, color: C.textFaint, background: "var(--hover)", border: "none", padding: "5px 10px", borderRadius: 12, whiteSpace: "nowrap", cursor: "pointer", marginBottom: 6, flexShrink: 0, fontFamily: "inherit" }}>{modelShort(modelId)}{thinkMode !== "off" ? " · 思考" : ""}</button>
 {loading ? (
@@ -1682,7 +1716,7 @@ default: return null;
 
 const wide = page === "window";
 return (
-<div className="themed" style={{ background: C.bg, minHeight: "100vh", maxWidth: wide ? 760 : 480, margin: "0 auto", position: "relative", transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
+<div className="themed" style={{ background: C.bg, minHeight: "100dvh", maxWidth: wide ? 760 : 480, margin: "0 auto", position: "relative", paddingTop: "env(safe-area-inset-top)", transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
 <div style={{ paddingBottom: 75 }}>{renderPage()}</div>
 <div className="themed" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: wide ? 760 : 480, background: C.bg, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "12px 8px calc(14px + env(safe-area-inset-bottom))", zIndex: 100, transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
 {navItems.map(n => (<button key={n.id} className="nav-btn" onClick={() => setPage(n.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, letterSpacing: 1, color: page===n.id?C.pink:C.textFaint, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", width: "18%", padding: "8px 0" }}><span style={{ fontWeight: page===n.id?500:300, transform: page===n.id?"scale(1.08)":"scale(1)", transition: "transform 0.2s ease-in-out", display: "inline-block" }}>{n.label}</span>{page===n.id&&<div style={{ width: 10, height: 2, background: C.pink, borderRadius: 1, position: "absolute", bottom: 0 }} />}</button>))}
