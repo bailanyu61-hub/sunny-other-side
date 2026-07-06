@@ -204,6 +204,11 @@ return `（${LETTER_CACHE.date || ""}）${String(LETTER_CACHE.content || "").sli
 
 let SONG_CACHE = [];
 function setSongCache(list) { SONG_CACHE = list || []; }
+const MUSIC_PLATFORMS = { "网易云": q => "https://music.163.com/#/search/m/?s=" + encodeURIComponent(q), "QQ音乐": q => "https://y.qq.com/n/ryqq/search?w=" + encodeURIComponent(q), "Spotify": q => "https://open.spotify.com/search/" + encodeURIComponent(q), "YouTube": q => "https://www.youtube.com/results?search_query=" + encodeURIComponent(q) };
+function musicSearchUrl(q) {
+const p = localStorage.getItem("music_platform") || "网易云";
+return (MUSIC_PLATFORMS[p] || MUSIC_PLATFORMS["网易云"])(q);
+}
 function getSongsText() {
 if (!SONG_CACHE.length) return "";
 return SONG_CACHE.slice(0, 40).map(e => `《${e.summary}》${(e.tags && e.tags[2]) ? " " + e.tags[2] : ""}${(e.tags && e.tags[1]) ? `（${e.tags[1]}）` : ""}`).join("、").slice(0, 600);
@@ -280,6 +285,10 @@ context: () => { const sg = getSongsText(); return sg ? `【一起听｜你分�
 registerTool({
 name: "gallery", label: "相册",
 context: () => { const g = getGalleryText(); return g ? `【相册里最近的照片】\n${g}` : ""; },
+});
+registerTool({
+name: "mood", label: "她的心情打卡",
+context: () => { const m = getMoodText(); return m ? `【她最近的心情打卡】${m}（如果她连续几天同一种情绪，值得留意，可以自然提起，不要说"打卡"这个词）` : ""; },
 });
 registerTool({
 name: "letters", label: "信件",
@@ -677,6 +686,10 @@ const showWhite = mood !== "sleep" && mood !== "happy" && mood !== "love";
 return (
 <div onClick={poke} style={{ position: "fixed", right: 10, bottom: page === "window" ? "calc(162px + env(safe-area-inset-bottom))" : "calc(94px + env(safe-area-inset-bottom))", zIndex: 60, cursor: "pointer", textAlign: "center", userSelect: "none", WebkitTapHighlightColor: "transparent" }}>
 {note && <div className="msg-appear" style={{ ...cardStyle, padding: "4px 10px", fontSize: 10, color: "var(--text-muted)", marginBottom: 6, maxWidth: 132, fontStyle: "italic", lineHeight: 1.5 }}>{note}</div>}
+{!window.__crabImgFail && (
+<img src={"crab-" + mood + ".png"} onError={e => { if (e.target.src.indexOf("crab-" + mood) > -1) { e.target.src = "crab.png"; } else { window.__crabImgFail = true; setBump(b => b + 1); } }} alt="" className={(mood === "happy" || mood === "love") ? "pet-body pet-bounce" : "pet-body"} style={{ width: 46, height: "auto", display: "block", margin: "0 auto", imageRendering: "pixelated" }} />
+)}
+{window.__crabImgFail && (
 <svg key={bump} className={(mood === "happy" || mood === "love") ? "pet-body pet-bounce" : "pet-body"} width="44" height="38" viewBox="0 0 48 40" style={{ display: "block", margin: "0 auto", filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.15))" }}>
 <circle cx="8" cy="9" r="5" fill={P} />
 <circle cx="40" cy="9" r="5" fill={P} />
@@ -691,6 +704,7 @@ return (
 {showWhite && <circle cx="30" cy="23" r="4.5" fill="#FFFFFF" />}
 {eyes}
 </svg>
+)}
 </div>
 );
 }
@@ -748,7 +762,18 @@ const WEATHERS = [
 { i: "sun", t: "今天天气很好。有点想去草坪。" },
 { i: "cloud", t: "今天很安静。适合窝在沙发里。" },
 ];
-const MOODS = ["开心", "平静", "想你", "累了", "难过"];
+const MOODS = ["🌤 开心", "🍃 平静", "💭 想你", "😪 累了", "🌧 难过"];
+function getMoodText() {
+try {
+const out = [];
+for (let i = 0; i < 5; i++) {
+const d = new Date(Date.now() - i * 86400000);
+const v = localStorage.getItem("mood_" + d.toDateString());
+if (v) out.push(`${i === 0 ? "今天" : i + "天前"}：${v}`);
+}
+return out.join("；");
+} catch(e) { return ""; }
+}
 
 function dailyPick(arr, offset = 0) {
 const d = new Date();
@@ -808,7 +833,7 @@ return (
 <div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1 }}>{dateStr} · 我们一起走过第 <span style={{ color: C.pink, fontFamily: "'Cormorant Garamond', serif", fontSize: 15 }}>{DAYS}</span> 天</div>
 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12, fontSize: 12, color: C.textMuted }}>{weatherIcon(weather.i)}<span style={{ fontStyle: "italic" }}>{weather.t}</span></div>
 <div style={{ borderTop: `1px dashed ${C.border}`, marginTop: 16, paddingTop: 14 }}>
-<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 8, letterSpacing: 1 }}>婕婕 · 今天心情</div>
+<div style={{ fontSize: 11, color: C.textFaint, marginBottom: 8, letterSpacing: 1 }}>{persona.nick} · 今天心情</div>
 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
 {MOODS.map(x => (<button key={x} className="btn" onClick={() => pickMood(x)} style={{ background: mood === x ? "var(--primary-soft)" : "var(--hover)", color: mood === x ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 14, padding: "5px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{x}</button>))}
 </div>
@@ -988,7 +1013,7 @@ const [saving, setSaving] = React.useState(false);
 const cats = Array.from(new Set(songs.map(e => (e.tags && e.tags[1]) || "").filter(Boolean)));
 const shown = filter === "全部" ? songs : filter === "喜欢" ? songs.filter(e => e.tags && e.tags[4] === "1") : songs.filter(e => (e.tags && e.tags[1]) === filter);
 const fmtD = iso => { if (!iso) return "今天"; const d = new Date(iso); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`; };
-const playUrl = e => ((e.tags && e.tags[3]) || ("https://music.163.com/#/search/m/?s=" + encodeURIComponent(e.summary + " " + ((e.tags && e.tags[2]) || ""))));
+const playUrl = e => ((e.tags && e.tags[3]) || musicSearchUrl(e.summary + " " + ((e.tags && e.tags[2]) || "")));
 const add = async () => {
 if (!t.trim()) return;
 setSaving(true);
@@ -1017,7 +1042,11 @@ return (
 <div style={{ display: "flex", alignItems: "center", gap: 12 }}><button className="nav-btn" onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6 }}><Icons.Back /></button><div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>一起听</div></div>
 <button className="btn" onClick={() => setShowAdd(v => !v)} style={{ ...BTN, padding: "6px 16px", fontSize: 12 }}>{showAdd ? "取消" : "添加一首"}</button>
 </div>
-<div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 16 }}>{n}想和你一起听的歌——聊天里他分享的歌，也会自动收进这里。</div>
+<div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 10 }}>{n}想和你一起听的歌——聊天里他分享的歌，也会自动收进这里。</div>
+<div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+<span style={{ fontSize: 10, color: C.textFaint }}>播放用</span>
+{Object.keys(MUSIC_PLATFORMS).map(p2 => (<button key={p2} className="btn" onClick={() => { try { localStorage.setItem("music_platform", p2); } catch(e) {} setFilter(f => f === "全部" ? "全部" : f); setSaving(v => v); setT(t2 => t2 + ""); }} style={{ background: (localStorage.getItem("music_platform") || "网易云") === p2 ? "var(--primary-soft)" : "none", color: (localStorage.getItem("music_platform") || "网易云") === p2 ? "var(--primary)" : C.textFaint, border: "none", borderRadius: 10, padding: "3px 10px", fontSize: 10.5, cursor: "pointer", fontFamily: "inherit" }}>{p2}</button>))}
+</div>
 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
 {["全部", "喜欢", ...cats].map(x => (<button key={x} className="btn" onClick={() => setFilter(x)} style={{ background: filter === x ? "var(--primary-soft)" : "var(--hover)", color: filter === x ? "var(--primary)" : C.textMuted, border: "none", borderRadius: 14, padding: "5px 13px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{x}</button>))}
 </div>
@@ -1241,9 +1270,8 @@ const noteHint = photo.user_note ? `她在这张照片下写了手记：「${pho
 const sys = `你是${pp.name}，${pp.nick}拿了一张照片给你看。${noteHint}结合你们共同的记忆和最近的生活，像本人一样对这张照片说一两句话，40字以内。可以联想到具体的共同回忆或她当时的样子，不要客套地描述画面，不要"今天的阳光很好"这类空话。${getWorldText() ? `\n\n【你们共同写下的记忆】\n${relevantWorld((photo.user_note || "") + digest, 1000)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}`;
 const imgRes = await fetch(photo.src);
 const blob = await imgRes.blob();
-const base64 = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result.split(',')[1]); r.readAsDataURL(blob); });
-const mediaType = blob.type || 'image/jpeg';
-const text = await ChatProvider.complete([{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "请写一段文字。" }]}], sys);
+const dataUrl = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result); r.readAsDataURL(blob); });
+const text = await ChatProvider.complete([{ role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: "（她把这张照片拿给你看）" }]}], sys);
 try { await sb.from("photos").update({ caption: text }).eq("id", photo.id); } catch(e) {}
 setPhotos(p => p.map(x => x.id === photo.id ? { ...x, caption: text } : x));
 setSelected(prev => ({ ...prev, caption: text }));
@@ -1538,18 +1566,25 @@ if (d.toDateString() === now.toDateString()) return hm;
 return `${d.getFullYear() !== now.getFullYear() ? d.getFullYear() + "年" : ""}${d.getMonth() + 1}月${d.getDate()}日 ${hm}`;
 };
 
-const sendImage = async (file) => {
+const [pendImg, setPendImg] = React.useState(null);
+const pickImage = async (file) => {
 if (!file || loading) return;
 const dataUrl = await compressImage(file, 1024, 0.82);
+setPendImg(dataUrl);
+setPlusOpen(false);
+};
+const sendImage = async (dataUrl, text) => {
+if (!dataUrl || loading) return;
+const cap = (text || "").trim();
 const now = new Date().toISOString();
-const uMsg = { localId: "ui" + Date.now(), role: "user", content: "", type: "image", fileData: dataUrl, created_at: now };
+const uMsg = { localId: "ui" + Date.now(), role: "user", content: cap, type: "image", fileData: dataUrl, created_at: now };
 const aMsg = { localId: "ai" + Date.now(), role: "assistant", content: "", type: "text", created_at: now, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
-const history = [...buildHistory(msgs), { role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: "（我拍了一张照片给你看）" }] }];
-setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false); setModelOpen(false);
+const history = [...buildHistory(msgs), { role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: cap || "（我拍了一张照片给你看）" }] }];
+setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false); setModelOpen(false); setPendImg(null); setInput(""); if (taRef.current) taRef.current.style.height = "auto";
 schedulePace(aMsg.localId, 1);
 try {
 const content = await runStream(history, aMsg.localId, false);
-try { await sb.from("messages").insert([{ role: "user", content: "（发了一张照片给你看）", type: "text" }, { role: "assistant", content, type: "text" }]); } catch(e) {}
+try { await sb.from("messages").insert([{ role: "user", content: cap ? `（发了一张照片）${cap}` : "（发了一张照片给你看）", type: "text" }, { role: "assistant", content, type: "text" }]); } catch(e) {}
 trySaveSong(content);
 } catch(e) {
 if (e.name === "AbortError") {
@@ -1626,7 +1661,8 @@ return (
 ) : (
 <React.Fragment>
 <div onClick={() => { if (m.type === "text") setActiveActions(a => a === i ? null : i); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 14.5, lineHeight: 1.7, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap" }}>
-{m.type === "image" && m.fileData && (<img src={m.fileData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block" }} />)}
+{m.type === "image" && m.fileData && (<img src={m.fileData} alt="" style={{ maxWidth: 170, maxHeight: 220, borderRadius: 12, display: "block" }} />)}
+{m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", marginTop: 6, lineHeight: 1.6 }}>{m.content}</div>)}
 {m.type === "text" && m.content}
 </div>
 {m.type === "text" && (
@@ -1702,7 +1738,7 @@ return (
 <div style={{ fontSize: 13, color: C.text, fontWeight: 400 }}>{songP.song.title}{songP.song.artist ? ` · ${songP.song.artist}` : ""}</div>
 {songP.song.note && <div style={{ fontSize: 11.5, color: C.textMuted, fontStyle: "italic", marginTop: 2, lineHeight: 1.6 }}>“{songP.song.note}”</div>}
 </div>
-<a href={"https://music.163.com/#/search/m/?s=" + encodeURIComponent(songP.song.title + " " + (songP.song.artist || ""))} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 12, color: "var(--primary)", flexShrink: 0, padding: "4px 8px" }}>播放</a>
+<a href={musicSearchUrl(songP.song.title + " " + (songP.song.artist || ""))} target="_blank" rel="noreferrer" style={{ textDecoration: "none", fontSize: 12, color: "var(--primary)", flexShrink: 0, padding: "4px 8px" }}>播放</a>
 </div>
 </div>
 )}
@@ -1777,6 +1813,13 @@ return (
 <div style={{ fontSize: 10, color: C.textFaint, marginTop: 10, lineHeight: 1.6 }}>自动：长问题或复杂问题才思考。思考过程会显示在回复上方，点击可展开。</div>
 </div>
 )}
+{pendImg && (
+<div className="msg-appear" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: "8px 10px" }}>
+<img src={pendImg} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 8 }} />
+<span style={{ flex: 1, fontSize: 11, color: C.textFaint }}>配点文字一起发，或直接发送</span>
+<button className="act" onClick={() => setPendImg(null)}>✕</button>
+</div>
+)}
 {plusOpen && (
 <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: 8, ...cardStyle, padding: 6, display: "flex", flexDirection: "column", minWidth: 176, zIndex: 20 }}>
 <button className="btn" onClick={() => { setPlusOpen(false); fileInputImage.current?.click(); }} style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.text, fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}><Icons.Image /> 发送照片</button>
@@ -1784,15 +1827,15 @@ return (
 <button className="btn" style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.textFaint, fontSize: 13, cursor: "default", display: "flex", alignItems: "center", gap: 8 }}><Icons.MicS /> 语音（即将到来）</button>
 </div>
 )}
-<div style={{ display: "flex", alignItems: "flex-end", gap: 8, background: C.cardBg, boxShadow: "var(--card-shadow)", border: `1px solid ${C.border}`, borderRadius: 24, padding: "9px 10px 9px 14px" }}>
+<div style={{ display: "flex", alignItems: "flex-end", gap: 8, background: C.cardBg, boxShadow: "var(--card-shadow)", border: `1px solid ${C.border}`, borderRadius: 22, padding: "5px 8px 5px 14px" }}>
 <button className="nav-btn" onClick={() => { setPlusOpen(v => !v); setModelOpen(false); }} title="更多" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 6, fontSize: 17, color: "var(--text-muted)", lineHeight: 1, width: 30, height: 34, flexShrink: 0 }}>{plusOpen ? "✕" : "＋"}</button>
-<input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) sendImage(e.target.files[0]); e.target.value = null; }} />
-<textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); sendText(input); } }} placeholder="写短笺......" style={{ flex: 1, background: "none", border: "none", padding: "7px 0", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6 }} />
+<input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) pickImage(e.target.files[0]); e.target.value = null; }} />
+<textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ flex: 1, background: "none", border: "none", padding: "7px 0", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6 }} />
 <button className="btn" onClick={() => { setModelOpen(v => !v); setPlusOpen(false); }} title="模型与深度思考设置" style={{ fontSize: 11, color: C.textFaint, background: "var(--hover)", border: "none", padding: "5px 10px", borderRadius: 12, whiteSpace: "nowrap", cursor: "pointer", marginBottom: 6, flexShrink: 0, fontFamily: "inherit" }}>{modelShort(modelId)}{thinkMode !== "off" ? " · 思考" : ""}</button>
 {loading ? (
 <button className="btn" onClick={stop} title="停止" style={{ background: "var(--primary)", color: "#FFFFFF", border: "none", borderRadius: "50%", width: 38, height: 38, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11 }}>■</button>
 ) : (
-<button className="btn" onClick={() => sendText(input)} disabled={!input.trim()} title="发送" style={{ background: input.trim() ? "var(--primary)" : "var(--hover)", color: input.trim() ? "#FFFFFF" : "var(--text-faint)", border: "none", borderRadius: "50%", width: 38, height: 38, cursor: input.trim() ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Send /></button>
+<button className="btn" onClick={() => { if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } }} disabled={!input.trim() && !pendImg} title="发送" style={{ background: (input.trim() || pendImg) ? "var(--primary)" : "var(--hover)", color: (input.trim() || pendImg) ? "#FFFFFF" : "var(--text-faint)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: (input.trim() || pendImg) ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Send /></button>
 )}
 </div>
 </div>
@@ -2001,14 +2044,6 @@ return (
 </div>
 </div>
 </div>
-<div style={{ ...cardStyle, padding: "6px 18px", marginBottom: 28 }}>
-{[["gallery","岁月相册",`${photos.length} 张照片`],["mailbox","温暖来信",letter?"有信件":"等信中"]].map(([id,label,hint],idx) => (
-<div key={id} onClick={() => onNav(id)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 0", borderBottom: idx===0?`1px solid ${C.border}`:"none", cursor: "pointer" }}>
-<div style={{ fontSize: 14, color: C.text, fontWeight: 300 }}>{label}</div>
-<div style={{ fontSize: 12, color: C.textFaint }}>{hint} →</div>
-</div>
-))}
-</div>
 <div style={{ ...cardStyle, padding: "22px", marginBottom: 28 }}>
 <div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1, marginBottom: 6 }}>插件中心</div>
 <div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 12 }}>关闭的插件，聊天时不再进入他的视野；新注册的工具会自动出现在这里。</div>
@@ -2212,7 +2247,7 @@ Bus.emit("pet", { mood: "happy", note: "他有话对你说，去阳台看看", m
 return () => clearTimeout(t);
 }, []);
 
-const navItems = [{ id: "home", label: "小屋" }, { id: "window", label: "阳台" }, { id: "mailbox", label: "信箱" }, { id: "shelf", label: "书架" }, { id: "profile", label: "我的" }];
+const navItems = [{ id: "home", label: "小屋" }, { id: "shelf", label: "记忆书架" }, { id: "window", label: "阳台", big: true }, { id: "moments", label: "朋友圈" }, { id: "profile", label: "我的角落" }];
 
 const renderPage = () => {
 switch (page) {
@@ -2220,6 +2255,14 @@ case "home": return <HomePage onNav={setPage} letter={letter} memories={memories
 case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} messages={messages} onBack={() => setPage("home")} />;
 case "music": return <MusicPage songs={songs} setSongs={updateSongs} onBack={() => setPage("home")} />;
 case "worldbook": return <WorldbookPage world={world} setWorld={updateWorld} messages={messages} onBack={() => setPage("home")} />;
+case "moments": return (
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
+<div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1, marginBottom: 10 }}>朋友圈</div>
+<div style={{ textAlign: "center", paddingTop: 90 }}>
+<div style={{ fontSize: 13, color: C.textFaint, fontStyle: "italic", lineHeight: 2.2 }}>这面墙还空着。<br />{getPersona().name}的朋友圈正在装修——<br />很快他会在这里发第一条动态。</div>
+</div>
+</div>
+);
 case "search": return <SearchPage messages={messages} photos={photos} world={world} songs={songs} onBack={() => setPage("home")} />;
 case "shelf": return <ShelfPage memories={memories} setMemories={setMemories} onBack={() => setPage("home")} />;
 case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} messages={messages} onBack={() => setPage("home")} />;
@@ -2246,7 +2289,11 @@ return (
 <DeskPet page={page} />
 <CallLayer setMessages={setMessages} />
 <div className="themed" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: wide ? 760 : 480, background: C.bg, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "12px 8px calc(14px + env(safe-area-inset-bottom))", zIndex: 100, transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
-{navItems.map(n => (<button key={n.id} className="nav-btn" onClick={() => setPage(n.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, letterSpacing: 1, color: page===n.id?C.pink:C.textFaint, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", width: "18%", padding: "8px 0" }}><span style={{ fontWeight: page===n.id?500:300, transform: page===n.id?"scale(1.08)":"scale(1)", transition: "transform 0.2s ease-in-out", display: "inline-block" }}>{n.label}</span>{page===n.id&&<div style={{ width: 10, height: 2, background: C.pink, borderRadius: 1, position: "absolute", bottom: 0 }} />}</button>))}
+{navItems.map(n => n.big ? (
+<button key={n.id} className="nav-btn" onClick={() => setPage(n.id)} style={{ background: page===n.id?"var(--primary)":"var(--primary-soft)", border: "none", cursor: "pointer", width: 52, height: 52, borderRadius: "50%", marginTop: -18, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.12)", flexShrink: 0, transition: "background 0.2s ease-in-out" }}>
+<span style={{ fontSize: 12, letterSpacing: 1, color: page===n.id?"#FFFFFF":"var(--primary)", fontWeight: 400 }}>{n.label}</span>
+</button>
+) : (<button key={n.id} className="nav-btn" onClick={() => setPage(n.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11.5, letterSpacing: 0.5, color: page===n.id?C.pink:C.textFaint, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", width: "19%", padding: "8px 0" }}><span style={{ fontWeight: page===n.id?500:300, transform: page===n.id?"scale(1.08)":"scale(1)", transition: "transform 0.2s ease-in-out", display: "inline-block", whiteSpace: "nowrap" }}>{n.label}</span>{page===n.id&&<div style={{ width: 10, height: 2, background: C.pink, borderRadius: 1, position: "absolute", bottom: 0 }} />}</button>))}
 </div>
 </div>
 );
