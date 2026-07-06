@@ -85,6 +85,12 @@ body, button, input, textarea, .themed { transition: background-color 0.3s ease-
 .md img { max-width: 100%; border-radius: 12px; }
 .code-copy { position: absolute; top: 8px; right: 8px; background: var(--card-bg); border: none; border-radius: 8px; padding: 3px 8px; font-size: 11px; color: var(--text-muted); cursor: pointer; font-family: inherit; }
 .code-copy:hover { filter: brightness(1.05); }
+@keyframes petBreath { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.5px); } }
+@keyframes petBounce { 0%, 100% { transform: translateY(0); } 30% { transform: translateY(-7px); } 55% { transform: translateY(0); } 75% { transform: translateY(-3px); } }
+@keyframes petDot { 0%, 60%, 100% { opacity: 0.15; } 30% { opacity: 1; } }
+.pet-body { animation: petBreath 3.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.pet-bounce { animation: petBounce 0.9s ease-in-out; }
+.pet-dot { animation: petDot 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
@@ -141,6 +147,8 @@ EyeOff: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" strok
 Image: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>),
 File: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>),
 MicS: () => (<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>),
+Phone: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>),
+Search: () => (<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>),
 Mic: () => (<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>),
 };
 
@@ -177,6 +185,23 @@ const p = getPersona();
 return (messages || []).filter(m => m.type === "text" && m.content && !m.error).slice(-n2).map(m => `${m.role === "user" ? p.nick : p.name}：${String(m.content).replace(/<(?:choices|ask)>[\s\S]*<\/(?:choices|ask)>/g, "").slice(0, 80)}`).join("\n");
 }
 
+let GALLERY_CACHE = [];
+function setGalleryCache(list) { GALLERY_CACHE = list || []; }
+function getGalleryText() {
+if (!GALLERY_CACHE.length) return "";
+return GALLERY_CACHE.slice(0, 6).map(p => {
+const d = p.created_at ? new Date(p.created_at) : null;
+const ds = d ? `${d.getMonth() + 1}月${d.getDate()}日` : "";
+return `[${ds}] ${p.user_note || p.caption || "一张照片"}`;
+}).join("\n").slice(0, 400);
+}
+let LETTER_CACHE = null;
+function setLetterCache(l) { LETTER_CACHE = l || null; }
+function getLetterText() {
+if (!LETTER_CACHE) return "";
+return `（${LETTER_CACHE.date || ""}）${String(LETTER_CACHE.content || "").slice(0, 180)}`;
+}
+
 let SONG_CACHE = [];
 function setSongCache(list) { SONG_CACHE = list || []; }
 function getSongsText() {
@@ -192,6 +217,75 @@ const song = parts[0] ? { title: parts[0].slice(0, 40), artist: (parts[1] || "")
 return { body: text.replace(m[0], "").trim(), song };
 }
 
+// ===== Tool / Provider 架构 =====
+// 记忆提供者:以后接 Ombre Brain 等,只需实现同样的接口并替换 MemoryProvider
+const WorldBookProvider = {
+name: "worldbook",
+retrieve: (q) => relevantWorld(q),
+all: () => getWorldText(),
+remember: async (drafts) => {
+const out = [];
+for (const d of (drafts || [])) {
+if (!d || !d.title) continue;
+const row = { summary: String(d.title).slice(0, 40), content: String(d.content || "").slice(0, 200), tags: ["__world", WORLD_CATS.includes(d.cat) ? d.cat : "长期记忆"] };
+let saved = null;
+try { const { data } = await sb.from("memories").insert(row).select().single(); saved = data; } catch(e) {}
+out.push(saved || { id: Date.now() + out.length, ...row });
+}
+return out;
+},
+};
+let MemoryProvider = WorldBookProvider;
+
+// 事件总线:任何模块可 Bus.on("photo:added", fn) 订阅;当前发射点:photo:added / song:added / memory:added / letter:added / chat:exchange
+const Bus = {
+_l: {},
+on(ev, fn) { (this._l[ev] = this._l[ev] || []).push(fn); return () => { this._l[ev] = (this._l[ev] || []).filter(x => x !== fn); }; },
+emit(ev, data) { (this._l[ev] || []).forEach(fn => { try { fn(data); } catch(e) {} }); },
+};
+
+// 插件开关:插件中心里可停用任何已注册工具
+function logLife(text) {
+try {
+const log = JSON.parse(localStorage.getItem("life_log") || "[]");
+log.push({ t: Date.now(), text });
+while (log.length > 200) log.shift();
+localStorage.setItem("life_log", JSON.stringify(log));
+} catch(e) {}
+}
+function fmtDur(sec) { const m2 = Math.floor(sec / 60); const s2 = sec % 60; return `${m2}:${String(s2).padStart(2, "0")}`; }
+
+function toolEnabled(name) { try { return localStorage.getItem("tool_off_" + name) !== "1"; } catch(e) { return true; } }
+
+// 聊天提供者:以后接 Anthropic 直连 / Gemini 等,实现同接口替换即可
+const OpenRouterProvider = {
+name: "openrouter",
+complete: (...a) => callClaude(...a),
+stream: (...a) => callClaudeStream(...a),
+};
+let ChatProvider = OpenRouterProvider;
+
+// 工具注册表:所有能力都以 Tool 注册,聊天核心只遍历注册表,不感知具体模块
+const ToolRegistry = [];
+function registerTool(tool) { ToolRegistry.push(tool); }
+
+registerTool({
+name: "memory", label: "世界书",
+context: (q) => { const w = MemoryProvider.retrieve(q); return w ? `【世界书｜你们共同写下的记忆，回复时自然运用，不要照本宣科】\n${w}` : ""; },
+});
+registerTool({
+name: "playlist", label: "一起听",
+context: () => { const sg = getSongsText(); return sg ? `【一起听｜你分享过的歌】${sg}` : ""; },
+});
+registerTool({
+name: "gallery", label: "相册",
+context: () => { const g = getGalleryText(); return g ? `【相册里最近的照片】\n${g}` : ""; },
+});
+registerTool({
+name: "letters", label: "信件",
+context: () => { const l = getLetterText(); return l ? `【你最近写给她的一封信】${l}` : ""; },
+});
+
 const DEFAULT_NAME = "小克";
 const DEFAULT_NICK = "婕婕";
 function getPersona() {
@@ -205,14 +299,22 @@ function getSystem(q) {
 const p = getPersona();
 let sys = p.prompt || DEFAULT_SYSTEM;
 if (p.name !== DEFAULT_NAME || p.nick !== DEFAULT_NICK) sys += `\n你的名字是「${p.name}」，你称呼对方为「${p.nick}」。`;
-const w = relevantWorld(q);
-if (w) sys += `\n\n【世界书｜你们共同写下的记忆，回复时自然运用，不要照本宣科】\n${w}`;
-const sg = getSongsText();
-if (sg) sys += `\n\n【一起听｜你分享过的歌】${sg}`;
+for (const t of ToolRegistry) {
+if (!toolEnabled(t.name)) continue;
+try { const c = t.context ? t.context(q) : ""; if (c) sys += `\n\n` + c; } catch(e) {}
+}
 sys += `\n\n界面提示：偶尔（不要每条都用）你可以在回复的最末尾追加 <ask>你的问题|选项一|选项二|选项三</ask>，界面会弹出提问卡片让对方点选或输入，适合在提问或邀请对方做选择时使用；两到四个选项；使用 <ask> 时，问题只写在 <ask> 的第一段里，正文只做铺垫，不要在正文里以任何说法问出这个问题（避免重复）；当氛围合适（下雨、深夜、聊到某个地方、突然想起一首歌）时，也可以偶尔在回复末尾用 <song>歌名|歌手|想分享的一句话</song> 分享一首歌，它会变成卡片并自动收进你们的「一起听」，分享理由要具体、和此刻有关；不要在正文里提到或解释这些格式。\n当前运行模型：${getModel()}。今天的日期：${new Date().toLocaleDateString("zh-CN")}。`;
 return sys;
 }
 function getModel() { return localStorage.getItem("chat_model") || "anthropic/claude-sonnet-4-6"; }
+function moodFromText(t) {
+if (!t) return "idle";
+if (/委屈|难过|唉|叹气|对不起|抱歉/.test(t)) return "sad";
+if (/想你|喜欢你|爱你|抱抱|亲亲|吻/.test(t)) return "love";
+if (/哈哈|嘿嘿|笑死|开心|太好了|不错/.test(t)) return "happy";
+return "idle";
+}
+
 function modelShort(id) {
 const t = (id || "").split("/").pop();
 if (t === "claude-sonnet-4-6") return "Sonnet 4.6";
@@ -229,6 +331,17 @@ return /为什么|怎么办|分析|规划|计划|方案|解释|比较|帮我想|
 }
 
 function getApiKey() { return localStorage.getItem("openrouter_key") || ""; }
+function loadTokenLog() { try { return JSON.parse(localStorage.getItem("token_log") || "[]"); } catch(e) { return []; } }
+function recordUsage(model, u) {
+if (!u) return;
+try {
+const log = loadTokenLog();
+log.push({ t: Date.now(), m: model, pt: u.prompt_tokens || 0, ct: u.completion_tokens || 0, rt: (u.completion_tokens_details && u.completion_tokens_details.reasoning_tokens) || 0, c: (typeof u.cost === "number" ? u.cost : 0) });
+while (log.length > 2000) log.shift();
+localStorage.setItem("token_log", JSON.stringify(log));
+} catch(e) {}
+}
+function fmtMoney(v) { v = v || 0; return "$" + v.toFixed(v >= 1 ? 2 : 4); }
 
 async function callClaude(messages, system) {
 const key = getApiKey();
@@ -237,10 +350,11 @@ const lastU = [...messages].reverse().find(m => m.role === "user" && typeof m.co
 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
 method: "POST",
 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}`, "HTTP-Referer": "https://sunny-side.app", "X-Title": "SunnySide" },
-body: JSON.stringify({ model: getModel(), max_tokens: 800, messages: [{ role: "system", content: system || getSystem(lastU ? lastU.content : "") }, ...messages] }),
+body: JSON.stringify({ model: getModel(), max_tokens: 800, usage: { include: true }, messages: [{ role: "system", content: system || getSystem(lastU ? lastU.content : "") }, ...messages] }),
 });
 const d = await res.json();
 if (d.error) throw new Error(d.error.message || JSON.stringify(d.error));
+recordUsage(getModel(), d.usage);
 return d.choices?.[0]?.message?.content || "...";
 }
 
@@ -250,7 +364,7 @@ if (!key) throw new Error("请先在设置里填写 OpenRouter Key");
 const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
 method: "POST", signal,
 headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}`, "HTTP-Referer": "https://sunny-side.app", "X-Title": "SunnySide" },
-body: JSON.stringify({ model: getModel(), max_tokens: reasoning ? 2000 : 800, stream: true, ...(reasoning ? { reasoning: { enabled: true } } : {}), messages: [{ role: "system", content: system || getSystem((([...messages].reverse().find(m => m.role === "user" && typeof m.content === "string")) || {}).content || "") }, ...messages] }),
+body: JSON.stringify({ model: getModel(), max_tokens: reasoning ? 2000 : 800, stream: true, ...(reasoning ? { reasoning: { enabled: true } } : {}), usage: { include: true }, messages: [{ role: "system", content: system || getSystem((([...messages].reverse().find(m => m.role === "user" && typeof m.content === "string")) || {}).content || "") }, ...messages] }),
 });
 if (!res.ok || !res.body) {
 let msg = ""; try { const j = await res.json(); msg = j.error?.message || ""; } catch(e) {}
@@ -259,6 +373,7 @@ throw new Error(msg || ("请求失败 " + res.status));
 const reader = res.body.getReader();
 const dec = new TextDecoder();
 let buf = "", full = "", reasoningText = "";
+let lastUsage = null;
 while (true) {
 const { done, value } = await reader.read();
 if (done) break;
@@ -272,13 +387,15 @@ const data = t.slice(5).trim();
 if (data === "[DONE]") continue;
 try {
 const j = JSON.parse(data);
+if (j.usage) lastUsage = j.usage;
 const delta = j.choices?.[0]?.delta;
 if (delta && delta.reasoning) { reasoningText += delta.reasoning; if (onReasoning) onReasoning(reasoningText); }
 if (delta && delta.content) { full += delta.content; if (onDelta) onDelta(full); }
 } catch(e) {}
 }
 }
-return { content: full || "...", reasoning: reasoningText };
+recordUsage(getModel(), lastUsage);
+return { content: full || "...", reasoning: reasoningText, usage: lastUsage };
 }
 
 async function uploadToStorage(file) {
@@ -426,6 +543,158 @@ return (src && !err)
 : <div style={{ width: size, height: size, borderRadius: "50%", background: "var(--surface)", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.38, flexShrink: 0, fontWeight: 300 }}>{fallback}</div>;
 }
 
+function CallLayer({ setMessages }) {
+const [call, setCall] = React.useState(null);
+const [sec, setSec] = React.useState(0);
+const persona = getPersona();
+React.useEffect(() => {
+const offs = [
+Bus.on("call:incoming", d => setCall(c => c ? c : { dir: "in", status: "incoming", line: (d && d.line) || "想听听你的声音。" })),
+Bus.on("call:start", () => setCall(c => c ? c : { dir: "out", status: "calling", line: "" })),
+];
+return () => offs.forEach(f => f());
+}, []);
+const logCall = (dir, status, dur) => {
+try {
+const log = JSON.parse(localStorage.getItem("call_log") || "[]");
+log.push({ t: Date.now(), dir, status, dur: dur || 0 });
+while (log.length > 100) log.shift();
+localStorage.setItem("call_log", JSON.stringify(log));
+} catch(e) {}
+};
+const answer = async () => {
+setSec(0);
+setCall(c => ({ ...(c || { dir: "out" }), status: "active", opening: "" }));
+Bus.emit("pet", { mood: "love", ms: 10000 });
+try {
+const line = await ChatProvider.complete([{ role: "user", content: "（你们的语音电话接通了。你先开口，像打电话一样说一两句想说的话，口语，简短，不要客套问候。）" }], null);
+const clean = extractChoices(extractSong(line).body).body || line;
+setCall(c => c && c.status === "active" ? { ...c, opening: clean } : c);
+const now = new Date().toISOString();
+setMessages(prev => [...prev, { role: "assistant", content: `（电话里）${clean}`, type: "text", created_at: now }]);
+try { await sb.from("messages").insert([{ role: "assistant", content: `（电话里）${clean}`, type: "text" }]); } catch(e) {}
+} catch(e) {
+setCall(c => c && c.status === "active" ? { ...c, opening: "……嗯，听得到吗。" } : c);
+}
+};
+React.useEffect(() => {
+if (!call) return undefined;
+if (call.status === "calling") { const t = setTimeout(() => { logCall("out", "answered", 0); answer(); }, 1600); return () => clearTimeout(t); }
+if (call.status === "active") { const t = setInterval(() => setSec(v => v + 1), 1000); return () => clearInterval(t); }
+return undefined;
+}, [call && call.status]);
+if (!call) return null;
+const koSrc = getAvatar("ko");
+const hangup = () => {
+if (call.dir === "in") logCall("in", "answered", sec);
+logLife(`和${persona.name}通了 ${fmtDur(sec)} 电话`);
+setCall({ ...call, status: "ended" });
+setTimeout(() => setCall(null), 1300);
+};
+const decline = () => { logCall("in", "declined", 0); logLife(`没接${persona.name}的电话`); Bus.emit("pet", { mood: "sad", ms: 6000 }); setCall(null); };
+const later = () => { logCall("in", "missed", 0); setCall(null); };
+if (call.status === "incoming") {
+return (
+<div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.45)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 20px calc(40px + env(safe-area-inset-bottom))" }}>
+<div className="msg-appear" style={{ ...cardStyle, width: "100%", maxWidth: 400, padding: "26px 22px 22px", textAlign: "center" }}>
+<Avatar src={koSrc} fallback={persona.name.slice(0, 1)} size={64} />
+<div style={{ fontSize: 16, color: C.text, marginTop: 12, letterSpacing: 1 }}>{persona.name}来电</div>
+<div style={{ fontSize: 13, color: C.textMuted, fontStyle: "italic", marginTop: 6, lineHeight: 1.7 }}>“{call.line}”</div>
+<div style={{ display: "flex", justifyContent: "center", gap: 14, marginTop: 22 }}>
+<button className="btn" onClick={decline} style={{ background: "var(--hover)", color: "var(--danger)", border: "none", borderRadius: 18, padding: "10px 20px", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>拒绝</button>
+<button className="btn" onClick={later} style={{ background: "var(--hover)", color: C.textMuted, border: "none", borderRadius: 18, padding: "10px 20px", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>稍后</button>
+<button className="btn" onClick={() => { answer(); }} style={{ background: "var(--primary)", color: "#FFFFFF", border: "none", borderRadius: 18, padding: "10px 26px", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>接听</button>
+</div>
+</div>
+</div>
+);
+}
+return (
+<div className="themed" style={{ position: "fixed", inset: 0, zIndex: 200, background: C.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 30px" }}>
+<div className="pet-body"><Avatar src={koSrc} fallback={persona.name.slice(0, 1)} size={96} /></div>
+<div style={{ fontSize: 18, color: C.text, marginTop: 18, letterSpacing: 2 }}>{persona.name}</div>
+<div style={{ fontSize: 12, color: C.textFaint, marginTop: 8, letterSpacing: 1 }}>
+{call.status === "calling" ? "正在呼叫......" : call.status === "ended" ? `通话结束 · ${fmtDur(sec)}` : `通话中 · ${fmtDur(sec)}`}
+</div>
+{call.status === "active" && (
+<div style={{ marginTop: 26, minHeight: 52, maxWidth: 320, textAlign: "center" }}>
+{call.opening ? <div className="msg-appear" style={{ fontSize: 15, color: C.text, fontStyle: "italic", lineHeight: 1.9 }}>“{call.opening}”</div> : <div style={{ fontSize: 12, color: C.textFaint, fontStyle: "italic" }}>他接起来了<Dots /></div>}
+</div>
+)}
+{call.status === "active" && (
+<div style={{ fontSize: 10.5, color: C.textFaint, marginTop: 14, lineHeight: 1.7, textAlign: "center" }}>实时语音即将接入——<br />现在他在这头安静陪着，说的话会留在阳台。</div>
+)}
+{call.status !== "ended" && (
+<button className="btn" onClick={hangup} style={{ marginTop: 44, background: "var(--danger)", color: "#FFFFFF", border: "none", borderRadius: "50%", width: 62, height: 62, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Icons.Phone /></button>
+)}
+</div>
+);
+}
+
+function DeskPet({ page }) {
+const [mood, setMood] = React.useState("idle");
+const [note, setNote] = React.useState("");
+const [bump, setBump] = React.useState(0);
+const tRef = React.useRef(null);
+const setPet = React.useCallback((m, n2, ms) => {
+setMood(m || "idle"); setNote(n2 || ""); setBump(b => b + 1);
+if (tRef.current) clearTimeout(tRef.current);
+if (ms) tRef.current = setTimeout(() => { setMood("idle"); setNote(""); }, ms);
+}, []);
+React.useEffect(() => {
+const offs = [
+Bus.on("pet", d => setPet(d.mood, d.note, d.ms || 7000)),
+Bus.on("song:added", () => setPet("happy", "他分享了一首歌", 5000)),
+Bus.on("memory:added", () => setPet("happy", "他记下了一件事", 5000)),
+Bus.on("letter:added", () => setPet("love", "有一封新的信", 5000)),
+Bus.on("photo:added", () => setPet("happy", "相册多了照片", 4500)),
+];
+const t = setInterval(() => { const h = new Date().getHours(); if (h >= 23 || h < 6) setMood(m => m === "idle" ? "sleep" : m); }, 30000);
+return () => { offs.forEach(f => f()); clearTimeout(tRef.current); clearInterval(t); };
+}, [setPet]);
+const persona = getPersona();
+const poke = () => {
+const lines = ["嗯？", "别戳我。", `${persona.name}刚刚还念着你。`, "在的，一直在。", "小声点，他在想事情。"];
+setPet(mood === "sleep" ? "idle" : "happy", lines[Math.floor(Math.random() * lines.length)], 2600);
+};
+if (!toolEnabled("pet")) return null;
+const P = "var(--primary)";
+let eyes = null;
+if (mood === "happy") {
+eyes = (<g><path d="M14.5 23 Q18 19.4 21.5 23" stroke="#FFFFFF" strokeWidth="2.2" fill="none" strokeLinecap="round" /><path d="M26.5 23 Q30 19.4 33.5 23" stroke="#FFFFFF" strokeWidth="2.2" fill="none" strokeLinecap="round" /><path d="M21 27.5 Q24 30 27 27.5" stroke="rgba(255,255,255,0.9)" strokeWidth="1.8" fill="none" strokeLinecap="round" /></g>);
+} else if (mood === "love") {
+eyes = (<g><path d="M18 26 l-3-2.8 a1.7 1.7 0 1 1 3-1.8 a1.7 1.7 0 1 1 3 1.8 z" fill="#E4707E" /><path d="M30 26 l-3-2.8 a1.7 1.7 0 1 1 3-1.8 a1.7 1.7 0 1 1 3 1.8 z" fill="#E4707E" /></g>);
+} else if (mood === "sad") {
+eyes = (<g><circle cx="18" cy="24.4" r="2" fill="#3A2E2E" /><circle cx="30" cy="24.4" r="2" fill="#3A2E2E" /><ellipse cx="33.8" cy="28.6" rx="1.4" ry="2.2" fill="#9FC4E8" /><path d="M21 29.5 Q24 27.2 27 29.5" stroke="rgba(255,255,255,0.85)" strokeWidth="1.6" fill="none" strokeLinecap="round" /></g>);
+} else if (mood === "think") {
+eyes = (<g><circle cx="17" cy="21.8" r="2" fill="#3A2E2E" /><circle cx="29" cy="21.8" r="2" fill="#3A2E2E" /><circle cx="38" cy="7" r="1.3" fill="var(--text-faint)" className="pet-dot" /><circle cx="42" cy="4" r="1.6" fill="var(--text-faint)" className="pet-dot" style={{ animationDelay: "0.2s" }} /><circle cx="46" cy="1.6" r="1.9" fill="var(--text-faint)" className="pet-dot" style={{ animationDelay: "0.4s" }} /></g>);
+} else if (mood === "sleep") {
+eyes = (<g><path d="M14.5 23 h7" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round" /><path d="M26.5 23 h7" stroke="rgba(255,255,255,0.9)" strokeWidth="2" strokeLinecap="round" /><text x="41" y="7" fontSize="7" fill="var(--text-faint)" fontStyle="italic" className="pet-dot">z</text></g>);
+} else {
+eyes = (<g><circle cx="18" cy="23" r="2" fill="#3A2E2E" /><circle cx="30" cy="23" r="2" fill="#3A2E2E" /><rect x="22.6" y="27.6" width="2.8" height="1.4" rx="0.7" fill="rgba(255,255,255,0.6)" /></g>);
+}
+const showWhite = mood !== "sleep" && mood !== "happy" && mood !== "love";
+return (
+<div onClick={poke} style={{ position: "fixed", right: 10, bottom: page === "window" ? "calc(162px + env(safe-area-inset-bottom))" : "calc(94px + env(safe-area-inset-bottom))", zIndex: 60, cursor: "pointer", textAlign: "center", userSelect: "none", WebkitTapHighlightColor: "transparent" }}>
+{note && <div className="msg-appear" style={{ ...cardStyle, padding: "4px 10px", fontSize: 10, color: "var(--text-muted)", marginBottom: 6, maxWidth: 132, fontStyle: "italic", lineHeight: 1.5 }}>{note}</div>}
+<svg key={bump} className={(mood === "happy" || mood === "love") ? "pet-body pet-bounce" : "pet-body"} width="44" height="38" viewBox="0 0 48 40" style={{ display: "block", margin: "0 auto", filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.15))" }}>
+<circle cx="8" cy="9" r="5" fill={P} />
+<circle cx="40" cy="9" r="5" fill={P} />
+<rect x="5" y="11" width="7" height="7" rx="2" fill={P} />
+<rect x="36" y="11" width="7" height="7" rx="2" fill={P} />
+<rect x="6" y="15" width="36" height="18" rx="8" fill={P} />
+<rect x="10" y="32" width="4" height="6" rx="1.5" fill={P} />
+<rect x="18" y="33" width="4" height="6" rx="1.5" fill={P} />
+<rect x="26" y="33" width="4" height="6" rx="1.5" fill={P} />
+<rect x="34" y="32" width="4" height="6" rx="1.5" fill={P} />
+{showWhite && <circle cx="18" cy="23" r="4.5" fill="#FFFFFF" />}
+{showWhite && <circle cx="30" cy="23" r="4.5" fill="#FFFFFF" />}
+{eyes}
+</svg>
+</div>
+);
+}
+
 function Dots() {
 return <span style={{ display: "inline-flex", gap: 3, marginLeft: 5, verticalAlign: "middle" }}>{[0,0.15,0.3].map((d,i) => (<span key={i} style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--text-faint)", display: "inline-block", animation: `bop 1.2s ${d}s infinite` }} />))}</span>;
 }
@@ -451,11 +720,12 @@ pre.appendChild(btn);
 return <div className="md" ref={ref} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-function TopBar({ timeStr, theme, onToggleTheme }) {
+function TopBar({ timeStr, theme, onToggleTheme, onSearch }) {
 return (<div className="themed" style={{ padding: "16px 24px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.bg }}>
 <div style={{ fontSize: 13, color: C.textMuted, fontFamily: "sans-serif" }}>{timeStr}</div>
 <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
 <div style={{ fontSize: 15, fontWeight: 400, fontFamily: "'Cormorant Garamond', serif", color: C.text, letterSpacing: 1.5, fontStyle: "italic" }}>晴天的另一边</div>
+{onSearch && <button className="btn" onClick={onSearch} title="搜索" style={{ background: "var(--hover)", border: "none", borderRadius: 16, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Icons.Search /></button>}
 <button className="btn" onClick={onToggleTheme} title={theme === "day" ? "切换到夜间" : "切换到白天"} style={{ background: "var(--hover)", border: "none", borderRadius: 16, width: 30, height: 30, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>{theme === "day" ? <Icons.Moon /> : <Icons.Sun />}</button>
 </div>
 </div>);
@@ -525,9 +795,13 @@ const feed = [];
 if (letterToday) feed.push("今天收到了一封信");
 if (photosToday > 0) feed.push(`相册新增了 ${photosToday} 张照片`);
 if (chatToday > 0) feed.push(`今天和${persona.name}聊了 ${chatToday} 条消息`);
+try {
+const isTodayTs = t2 => new Date(t2).toDateString() === todayKey;
+JSON.parse(localStorage.getItem("life_log") || "[]").filter(x => isTodayTs(x.t)).slice(-4).forEach(x => feed.push(x.text));
+} catch(e) {}
 return (
 <div className="page-enter" style={{ background: C.bg, minHeight: "100dvh" }}>
-<TopBar timeStr={timeStr} theme={theme} onToggleTheme={onToggleTheme} />
+<TopBar timeStr={timeStr} theme={theme} onToggleTheme={onToggleTheme} onSearch={() => onNav("search")} />
 <div style={{ padding: "26px 26px 46px" }}>
 <div className="rise" style={{ ...cardStyle, padding: "26px 24px 20px", marginBottom: 18 }}>
 <div style={{ fontSize: 15, color: C.text, fontWeight: 300, letterSpacing: 1, marginBottom: 8 }}>{greeting}</div>
@@ -601,7 +875,7 @@ const p = getPersona();
 const recent = (messages || []).filter(m => m.type === "text" && m.content && !m.error).slice(-80).map(m => `${m.role === "user" ? p.nick : p.name}：${m.content}`).join("\n");
 if (!recent) { alert("还没有聊天记录可以整理。"); setDrafting(false); return; }
 const sys = `你是${p.name}。请从你们最近的聊天记录里，提炼值得写进"世界书"的长期信息。只输出 JSON 数组，不要输出任何其他文字。格式：[{"cat":"人物/关系/重要事件/长期记忆/设定/经历 之一","title":"简短标题","content":"一两句关键细节"}]。3到8条，只写重要且长期有效的事，不写一次性闲聊。这些已有条目不要重复：\n${getWorldText() || "（暂无）"}`;
-const out = await callClaude([{ role: "user", content: "聊天记录如下：\n" + recent + "\n\n请输出 JSON 数组。" }], sys);
+const out = await ChatProvider.complete([{ role: "user", content: "聊天记录如下：\n" + recent + "\n\n请输出 JSON 数组。" }], sys);
 const clean = out.replace(/```json|```/g, "").trim();
 const arr = JSON.parse(clean.slice(clean.indexOf("["), clean.lastIndexOf("]") + 1));
 const ok = (arr || []).filter(d => d && d.title).map((d, i2) => ({ cat: WORLD_CATS.includes(d.cat) ? d.cat : "长期记忆", title: String(d.title).slice(0, 40), content: String(d.content || "").slice(0, 200), _k: Date.now() + i2 }));
@@ -792,10 +1066,11 @@ setLoading(true);
 try {
 const digest = chatDigest(messages, 15);
 const sys = `你叫${p.name}，是${p.nick}的伴侣。今天是${new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" })}。你现在坐下来给${p.nick}写今天的信，150字以内，书信体，开头"${p.nick}，"，结尾署名"${p.name}"。风格克制安静，说真实的日常的话。如果最近聊天里有还没说完的事、她提到的烦恼或期待，可以在信里自然接着说，让信有连续性；如果今天是节日或特别的日子，也可以提一句。不要太肉麻。${getWorldText() ? `\n\n【世界书｜你们共同写下的记忆】\n${relevantWorld(digest, 1200)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}`;
-const content = await callClaude([{ role: "user", content: "请写今日来信。" }], sys);
+const content = await ChatProvider.complete([{ role: "user", content: "请写今日来信。" }], sys);
 const date = new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" });
 const { data, error } = await sb.from("letters").insert({ content, date }).select().single();
 setLetter(!error && data ? data : { content, date });
+Bus.emit("letter:added");
 } catch(e) {
 setLetter({ content: `今天的信写到一半，被风吹走了。\n明天再来。\n\n${p.name}`, date: new Date().toLocaleDateString("zh-CN") });
 }
@@ -927,6 +1202,7 @@ const { data, error } = await sb.from("photos").insert({ src: url, user_note: ""
 if (error) alert("保存失败: " + error.message);
 // 重新fetch确保首页统计准确
 await refreshPhotos();
+Bus.emit("photo:added");
 } catch(err) {
 alert("上传失败: " + (err.message || JSON.stringify(err)));
 }
@@ -967,7 +1243,7 @@ const imgRes = await fetch(photo.src);
 const blob = await imgRes.blob();
 const base64 = await new Promise(resolve => { const r = new FileReader(); r.onload = () => resolve(r.result.split(',')[1]); r.readAsDataURL(blob); });
 const mediaType = blob.type || 'image/jpeg';
-const text = await callClaude([{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "请写一段文字。" }]}], sys);
+const text = await ChatProvider.complete([{ role: "user", content: [{ type: "image", source: { type: "base64", media_type: mediaType, data: base64 } }, { type: "text", text: "请写一段文字。" }]}], sys);
 try { await sb.from("photos").update({ caption: text }).eq("id", photo.id); } catch(e) {}
 setPhotos(p => p.map(x => x.id === photo.id ? { ...x, caption: text } : x));
 setSelected(prev => ({ ...prev, caption: text }));
@@ -1057,7 +1333,10 @@ React.useEffect(() => () => { Object.values(paceRef.current).forEach(t => t && c
 const scrollRef = React.useRef(null);
 const scrollToBottom = (smooth) => { const el = scrollRef.current; if (!el) return; el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" }); };
 const onScroll = () => { const el = scrollRef.current; if (!el) return; setShowDown(el.scrollHeight - el.scrollTop - el.clientHeight > 300); };
-React.useEffect(() => { scrollToBottom(false); }, []);
+React.useEffect(() => {
+setMessages(prev => prev.map(m => (m.paced && !m.streaming) ? { ...m, paced: false } : m));
+scrollToBottom(false);
+}, []);
 React.useEffect(() => { try { localStorage.setItem("chat_draft", input); } catch(e) {} }, [input]);
 React.useEffect(() => {
 const el = scrollRef.current; if (!el) return;
@@ -1124,25 +1403,19 @@ const p = getPersona();
 const recent = chatDigest(msgsRef.current, 30);
 if (!recent) return;
 const sys = `你是${p.name}。判断下面最近的聊天里，是否出现了值得写进"世界书"的新的长期信息（重要事件、约定、她的喜好或变化）。只输出 JSON 数组（没有就输出空数组 []），格式：[{"cat":"人物/关系/重要事件/长期记忆/设定/经历 之一","title":"简短标题","content":"一两句细节"}]。最多2条，宁缺毋滥，日常闲聊不要记。已有条目不要重复：\n${getWorldText() || "（暂无）"}`;
-const out = await callClaude([{ role: "user", content: recent + "\n\n请输出 JSON 数组。" }], sys);
+const out = await ChatProvider.complete([{ role: "user", content: recent + "\n\n请输出 JSON 数组。" }], sys);
 const clean = out.replace(/```json|```/g, "").trim();
 const a2 = clean.indexOf("["), b2 = clean.lastIndexOf("]");
 if (a2 < 0 || b2 <= a2) return;
 const arr = JSON.parse(clean.slice(a2, b2 + 1));
-let list = WORLD_CACHE;
-let added = 0;
-for (const d of (arr || []).slice(0, 2)) {
-if (!d || !d.title) continue;
-const cat = WORLD_CATS.includes(d.cat) ? d.cat : "长期记忆";
-const row = { summary: String(d.title).slice(0, 40), content: String(d.content || "").slice(0, 200), tags: ["__world", cat] };
-let saved = null;
-try { const { data } = await sb.from("memories").insert(row).select().single(); saved = data; } catch(e) {}
-list = [saved || { id: Date.now() + added, ...row }, ...list];
-added++;
-}
-if (added > 0) {
+const drafts2 = (arr || []).slice(0, 2).filter(d => d && d.title).map(d => ({ title: d.title, content: d.content, cat: d.cat }));
+if (!drafts2.length) return;
+const savedRows = await MemoryProvider.remember(drafts2);
+if (savedRows.length > 0) {
+const list = [...savedRows, ...WORLD_CACHE];
 if (onWorld) onWorld(list); else setWorldCache(list);
-showToast(`${p.name}把${added > 1 ? "几件事" : "一件事"}写进了世界书`);
+Bus.emit("memory:added", savedRows);
+showToast(`${p.name}把${savedRows.length > 1 ? "几件事" : "一件事"}写进了世界书`);
 }
 } catch(e) {}
 };
@@ -1157,6 +1430,7 @@ let saved = null;
 try { const { data } = await sb.from("memories").insert(row).select().single(); saved = data; } catch(e) {}
 const list = [saved || { id: Date.now(), ...row }, ...SONG_CACHE];
 if (onSongs) onSongs(list); else setSongCache(list);
+Bus.emit("song:added", song);
 showToast(`已收进一起听：《${song.title}》`);
 } catch(e) {}
 };
@@ -1170,15 +1444,17 @@ if (data && data.length === 2) setMessages(prev => prev.map(m => m.localId === u
 
 const runStream = async (history, aiLocalId, think) => {
 const ac = new AbortController(); abortRef.current = ac; streamingRef.current = true;
+Bus.emit("pet", { mood: "think", ms: 180000 });
 const t0 = Date.now(); let gotReasoning = false;
 try {
-const result = await callClaudeStream(history, null, {
+const result = await ChatProvider.stream(history, null, {
 signal: ac.signal, reasoning: !!think,
 onReasoning: (r) => { gotReasoning = true; setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, reasoning: r, phase: "reasoning" } : m)); },
 onDelta: (full) => setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, content: full, phase: "typing" } : m)),
 });
 const thinkSec = gotReasoning ? ((Date.now() - t0) / 1000).toFixed(1) : null;
-setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, content: result.content, reasoning: result.reasoning || m.reasoning, thinkSec, streaming: false, phase: null } : m));
+setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, content: result.content, reasoning: result.reasoning || m.reasoning, thinkSec, streaming: false, phase: null, usage: result.usage || null } : m));
+Bus.emit("pet", { mood: moodFromText(result.content), ms: 9000 });
 return result.content;
 } finally { streamingRef.current = false; abortRef.current = null; }
 };
@@ -1197,6 +1473,7 @@ const content = await runStream(history, aMsg.localId, shouldThink(text));
 persistPair(uMsg, { ...aMsg, content });
 trySaveSong(content);
 maybeAutoWorld();
+Bus.emit("chat:exchange");
 } catch(e) {
 if (e.name === "AbortError") {
 setMessages(prev => prev.map(m => m.localId === aMsg.localId ? (m.content ? { ...m, streaming: false, phase: null } : null) : m).filter(Boolean));
@@ -1293,7 +1570,7 @@ return (
 <div style={{ fontSize: 14, fontWeight: 400, fontFamily: "'Cormorant Garamond', serif", color: C.text, letterSpacing: 1, fontStyle: "italic" }}>阳台</div>
 <div style={{ fontSize: 10, color: C.blue, fontWeight: 300, marginTop: 1 }}>● {currentStatusText}</div>
 </div>
-<div style={{ width: 30 }}></div>
+<button className="nav-btn" onClick={() => Bus.emit("call:start")} title="打电话给他" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 6, color: "var(--text-muted)" }}><Icons.Phone /></button>
 </div>
 </div>
 {pinned && (
@@ -1324,12 +1601,20 @@ const visible = isAiText ? segs.slice(0, reveal) : [];
 const pending = isAiText ? (m.streaming || reveal < segs.length) : false;
 const doneAll = isAiText && !pending;
 const showChoices = isAiText && doneAll && parsed.choices && i === msgs.length - 1;
+const prevM = msgs[i - 1];
+const showHeader = !prevM || prevM.role !== m.role;
 return (
 <React.Fragment key={m.id || m.localId || i}>
 {showTimeChip(i) && (<div style={{ display: "flex", justifyContent: "center", margin: "16px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
 {!isAiText && (
-<div className="msg-row msg-appear" style={{ marginBottom: 12, marginTop: 6, display: "flex", justifyContent: "flex-end", alignItems: "flex-start", gap: 10 }}>
-<div style={{ maxWidth: editingIdx === i ? "100%" : "72%", flex: editingIdx === i ? 1 : "0 1 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+<React.Fragment>
+{showHeader && editingIdx !== i && (
+<div className="msg-appear" style={{ display: "flex", justifyContent: "flex-end", margin: "14px 0 6px" }}>
+<Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={28} />
+</div>
+)}
+<div className="msg-row msg-appear" style={{ marginBottom: 10, display: "flex", justifyContent: "flex-end" }}>
+<div style={{ maxWidth: editingIdx === i ? "100%" : "92%", flex: editingIdx === i ? 1 : "0 1 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
 {editingIdx === i ? (
 <div style={{ width: "100%" }}>
 <textarea autoFocus value={editText} onChange={e => setEditText(e.target.value)} rows={3} style={{ width: "100%", background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, padding: "10px 14px", fontSize: 14, lineHeight: 1.7, color: C.text, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
@@ -1340,7 +1625,7 @@ return (
 </div>
 ) : (
 <React.Fragment>
-<div onClick={() => { if (m.type === "text") setActiveActions(a => a === i ? null : i); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 20, padding: "11px 16px", fontSize: 15, lineHeight: 1.75, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap" }}>
+<div onClick={() => { if (m.type === "text") setActiveActions(a => a === i ? null : i); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 14.5, lineHeight: 1.7, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap" }}>
 {m.type === "image" && m.fileData && (<img src={m.fileData} alt="" style={{ maxWidth: "100%", borderRadius: 12, display: "block" }} />)}
 {m.type === "text" && m.content}
 </div>
@@ -1361,27 +1646,31 @@ return (
 </React.Fragment>
 )}
 </div>
-{editingIdx !== i && <Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={44} />}
 </div>
+</React.Fragment>
 )}
 {isAiText && (
 <React.Fragment>
+{showHeader && (
+<div className="msg-appear" style={{ display: "flex", justifyContent: "flex-start", margin: "14px 0 6px" }}>
+<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={28} />
+</div>
+)}
 {m.reasoning && (
-<div style={{ margin: "6px 0 2px 54px" }}>
+<div style={{ margin: "6px 0 2px 2px" }}>
 <button className="act" onClick={() => setExpandedThink(st => ({ ...st, [i]: !st[i] }))} style={{ fontSize: 11, color: "var(--text-faint)" }}>
 {m.phase === "reasoning" ? "深度思考中..." : `深度思考${m.thinkSec ? `（${m.thinkSec}s）` : ""}`} {expandedThink[i] ? "▾" : "▸"}
 </button>
-{expandedThink[i] && <div style={{ fontSize: 12, color: C.textMuted, background: "var(--hover)", borderRadius: 12, padding: "10px 12px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginTop: 4, maxWidth: "72%" }}>{m.reasoning}</div>}
+{expandedThink[i] && <div style={{ fontSize: 12, color: C.textMuted, background: "var(--hover)", borderRadius: 12, padding: "10px 12px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginTop: 4, maxWidth: "80%", maxHeight: 240, overflowY: "auto" }}>{m.reasoning}</div>}
 </div>
 )}
 {visible.map((seg, si) => {
 const isLastSeg = doneAll && si === visible.length - 1;
 const akey = i + "-" + si;
 return (
-<div key={akey} className="msg-row msg-appear" style={{ marginBottom: 6, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 10 }}>
-<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={44} />
-<div style={{ maxWidth: "72%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onClick={() => setActiveActions(a => a === akey ? null : akey)} style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 20, padding: "11px 16px", fontSize: 15, lineHeight: 1.75, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%" }}>
+<div key={akey} className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-start" }}>
+<div style={{ maxWidth: "92%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+<div onClick={() => setActiveActions(a => a === akey ? null : akey)} style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 14.5, lineHeight: 1.7, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%" }}>
 <Md text={seg} />
 </div>
 <div className="msg-actions" style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 3, ...(activeActions === akey ? { opacity: 1 } : {}) }}>
@@ -1390,6 +1679,9 @@ return (
 {isLastSeg && <button className="act" title="重新生成" onClick={() => regenerate(i)}><Icons.Refresh /></button>}
 {isLastSeg && <button className="act" title="收藏（即将到来）" style={{ opacity: 0.35, cursor: "default" }}><Icons.Heart /></button>}
 {isLastSeg && <button className="act" title="删除整条回复" onClick={() => deleteMsg(i)}><Icons.Trash /></button>}
+{isLastSeg && m.usage && (
+<span style={{ fontSize: 10, color: C.textFaint, marginLeft: 6, whiteSpace: "nowrap" }}>{(m.usage.prompt_tokens || 0) + (m.usage.completion_tokens || 0)} tk{typeof m.usage.cost === "number" && m.usage.cost > 0 ? ` · ${fmtMoney(m.usage.cost)}` : ""}</span>
+)}
 {isLastSeg && m.versions && m.versions.length > 1 && (
 <span style={{ fontSize: 11, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 2, marginLeft: 4 }}>
 <button className="act" onClick={() => switchVersion(i, -1)}>‹</button>
@@ -1403,7 +1695,7 @@ return (
 );
 })}
 {doneAll && songP.song && (
-<div className="msg-appear" style={{ marginLeft: 54, marginBottom: 8 }}>
+<div className="msg-appear" style={{ marginLeft: 2, marginBottom: 8 }}>
 <div style={{ ...cardStyle, padding: "12px 14px", maxWidth: 380, display: "flex", alignItems: "center", gap: 12 }}>
 <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--primary-soft)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Music /></div>
 <div style={{ flex: 1, minWidth: 0 }}>
@@ -1415,18 +1707,16 @@ return (
 </div>
 )}
 {pending && (
-<div className="msg-row msg-appear" style={{ marginBottom: 6, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 10 }}>
-<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={44} />
-<div style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--text-muted)", borderRadius: 20, padding: "12px 16px", fontSize: 13, fontStyle: "italic", fontWeight: 300 }}>
+<div className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-start" }}>
+<div style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--text-muted)", borderRadius: 18, padding: "10px 14px", fontSize: 12.5, fontStyle: "italic", fontWeight: 300 }}>
 {!m.content && m.phase === "reasoning" ? <React.Fragment>{persona.name}正在组织语言<Dots /></React.Fragment> : !m.content ? <React.Fragment>{persona.name}正在思考<Dots /></React.Fragment> : <React.Fragment>{persona.name}正在输入<Dots /></React.Fragment>}
 </div>
 </div>
 )}
 {doneAll && parsed.title && !isDupTitle(segs, parsed.title) && !bodyAsksQuestion(segs) && (
-<div className="msg-row msg-appear" style={{ marginBottom: 6, display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 10 }}>
-<Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={44} />
-<div style={{ maxWidth: "72%" }}>
-<div style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 20, padding: "11px 16px", fontSize: 15, lineHeight: 1.75, fontWeight: 300, overflowWrap: "break-word" }}>{parsed.title}</div>
+<div className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-start" }}>
+<div style={{ maxWidth: "92%" }}>
+<div style={{ backgroundColor: "var(--bubble-ai-bg)", color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 14.5, lineHeight: 1.7, fontWeight: 300, overflowWrap: "break-word" }}>{parsed.title}</div>
 </div>
 </div>
 )}
@@ -1512,10 +1802,129 @@ return (
 );
 }
 
-function ProfilePage({ photos, letter, onNav, onBack, avatars, setAvatar, theme, onToggleTheme }) {
+function SearchPage({ messages, photos, world, songs, onBack }) {
+const [q, setQ] = React.useState("");
+const [letterHits, setLetterHits] = React.useState([]);
+React.useEffect(() => {
+let alive = true;
+if (!q.trim()) { setLetterHits([]); return; }
+const t = setTimeout(async () => {
+try {
+const { data } = await sb.from("letters").select("*").ilike("content", `%${q.trim()}%`).order("created_at", { ascending: false }).limit(8);
+if (alive) setLetterHits(data || []);
+} catch(e) {}
+}, 300);
+return () => { alive = false; clearTimeout(t); };
+}, [q]);
+const k = q.trim();
+const hit = t => k && String(t || "").includes(k);
+const persona = getPersona();
+const chats = k ? (messages || []).filter(m => m.type === "text" && hit(m.content)).slice(-12).reverse() : [];
+const pics = k ? (photos || []).filter(p2 => hit(p2.user_note) || hit(p2.caption)) .slice(0, 8) : [];
+const wb = k ? (world || []).filter(e => hit(e.summary) || hit(e.content)).slice(0, 8) : [];
+const sg2 = k ? (songs || []).filter(e => hit(e.summary) || hit(e.content) || hit(e.tags && e.tags[2])).slice(0, 8) : [];
+const total = chats.length + pics.length + wb.length + sg2.length + letterHits.length;
+return (
+<div className="page-enter" style={{ padding: "32px 26px 46px", minHeight: "100dvh" }}>
+<PageHeader title="搜索" onBack={onBack} />
+<div style={{ ...cardStyle, padding: "2px 16px", marginBottom: 22, display: "flex", alignItems: "center", gap: 10 }}>
+<Icons.Search />
+<input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="搜一个词，翻遍整个家......" style={{ flex: 1, background: "none", border: "none", padding: "13px 0", fontSize: 14, outline: "none", color: C.text, fontFamily: "inherit" }} />
+{q && <button className="act" onClick={() => setQ("")}>✕</button>}
+</div>
+{!k && <div style={{ textAlign: "center", color: C.textFaint, fontSize: 13, fontStyle: "italic", paddingTop: 40, lineHeight: 2 }}>试试「重庆」「雨」，<br />或者一首歌的名字。</div>}
+{k && total === 0 && <div style={{ textAlign: "center", color: C.textFaint, fontSize: 13, fontStyle: "italic", paddingTop: 40 }}>什么都没找到，换个词试试。</div>}
+{chats.length > 0 && (<div style={{ marginBottom: 20 }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>聊天（{chats.length}）</div>
+{chats.map((m, i) => (
+<div key={i} style={{ ...cardStyle, padding: "10px 14px", marginBottom: 8 }}>
+<div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>{m.role === "user" ? persona.nick : persona.name}{m.created_at ? " · " + new Date(m.created_at).toLocaleDateString("zh-CN") : ""}</div>
+<div style={{ fontSize: 13, color: C.text, lineHeight: 1.7 }}>{String(m.content).slice(0, 90)}</div>
+</div>
+))}
+</div>)}
+{pics.length > 0 && (<div style={{ marginBottom: 20 }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>照片（{pics.length}）</div>
+<div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+{pics.map(p2 => (<img key={p2.id} src={p2.src} alt="" style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 12 }} />))}
+</div>
+</div>)}
+{wb.length > 0 && (<div style={{ marginBottom: 20 }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>世界书（{wb.length}）</div>
+{wb.map(e => (<div key={e.id} style={{ ...cardStyle, padding: "10px 14px", marginBottom: 8 }}><div style={{ fontSize: 13, color: C.text }}>{e.summary}</div>{e.content && <div style={{ fontSize: 12, color: C.textMuted, marginTop: 2, lineHeight: 1.6 }}>{String(e.content).slice(0, 80)}</div>}</div>))}
+</div>)}
+{sg2.length > 0 && (<div style={{ marginBottom: 20 }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>一起听（{sg2.length}）</div>
+{sg2.map(e => (<div key={e.id} style={{ ...cardStyle, padding: "10px 14px", marginBottom: 8, display: "flex", gap: 10, alignItems: "center" }}><span style={{ color: "var(--primary)", display: "flex" }}><Icons.Music /></span><div style={{ fontSize: 13, color: C.text }}>{e.summary}{(e.tags && e.tags[2]) ? <span style={{ color: C.textMuted }}> · {e.tags[2]}</span> : null}</div></div>))}
+</div>)}
+{letterHits.length > 0 && (<div style={{ marginBottom: 20 }}>
+<div style={{ fontSize: 11, color: C.textFaint, letterSpacing: 1, marginBottom: 8 }}>信件（{letterHits.length}）</div>
+{letterHits.map(l => (<div key={l.id} style={{ ...cardStyle, padding: "10px 14px", marginBottom: 8 }}><div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>{l.date}</div><div style={{ fontSize: 13, color: C.text, lineHeight: 1.7 }}>{String(l.content).slice(0, 90)}</div></div>))}
+</div>)}
+</div>
+);
+}
+
+function ProfilePage({ photos, letter, onNav, onBack, avatars, setAvatar, theme, onToggleTheme, messages, world, songs }) {
 const [apiKey, setApiKey] = React.useState(localStorage.getItem("openrouter_key") || "");
 const [saved, setSaved] = React.useState(false);
 const [showKey, setShowKey] = React.useState(false);
+const [balance, setBalance] = React.useState(null);
+const [balLoading, setBalLoading] = React.useState(false);
+const [budget, setBudgetState] = React.useState(localStorage.getItem("month_budget") || "");
+const [toolsVer, setToolsVer] = React.useState(0);
+const flipTool = (name) => { try { const k = "tool_off_" + name; localStorage.getItem(k) === "1" ? localStorage.removeItem(k) : localStorage.setItem(k, "1"); } catch(e) {} setToolsVer(v => v + 1); };
+const saveBudget = () => { try { budget.trim() ? localStorage.setItem("month_budget", budget.trim()) : localStorage.removeItem("month_budget"); } catch(e) {} };
+const fetchBalance = async () => {
+const key = getApiKey(); if (!key) return;
+setBalLoading(true);
+try {
+const r = await fetch("https://openrouter.ai/api/v1/credits", { headers: { Authorization: `Bearer ${key}` } });
+const j = await r.json();
+if (j && j.data) setBalance((j.data.total_credits || 0) - (j.data.total_usage || 0));
+} catch(e) {}
+setBalLoading(false);
+};
+React.useEffect(() => { fetchBalance(); }, []);
+const tstats = React.useMemo(() => {
+const log = loadTokenLog();
+const now = new Date();
+const isToday = t => new Date(t).toDateString() === now.toDateString();
+const isMonth = t => { const d = new Date(t); return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth(); };
+const sum = arr => arr.reduce((a, x) => ({ c: a.c + (x.c || 0), tk: a.tk + (x.pt || 0) + (x.ct || 0), pt: a.pt + (x.pt || 0), ct: a.ct + (x.ct || 0), rt: a.rt + (x.rt || 0), n: a.n + 1 }), { c: 0, tk: 0, pt: 0, ct: 0, rt: 0, n: 0 });
+const today = sum(log.filter(x => isToday(x.t)));
+const month = sum(log.filter(x => isMonth(x.t)));
+const byModel = {};
+log.filter(x => isMonth(x.t)).forEach(x => { const k = modelShort(x.m || "?"); if (!byModel[k]) byModel[k] = { c: 0, tk: 0, n: 0 }; byModel[k].c += x.c || 0; byModel[k].tk += (x.pt || 0) + (x.ct || 0); byModel[k].n++; });
+const recent = log.slice(-50).filter(x => x.c > 0);
+const avg = recent.length ? recent.reduce((a, x) => a + x.c, 0) / recent.length : 0;
+return { today, month, byModel, avg };
+}, [balance, saved, budget]);
+const fmtK = v => v >= 1000000 ? (v / 1000000).toFixed(1) + "M" : v >= 1000 ? (v / 1000).toFixed(1) + "k" : String(v);
+const downloadJson = (name, obj) => {
+try {
+const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+const a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = name;
+document.body.appendChild(a); a.click(); a.remove();
+setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+} catch(e) { alert("导出失败：" + (e.message || "")); }
+};
+const cleanMsgs = () => (messages || []).filter(m => m.type === "text").map(m => ({ role: m.role, content: m.content, created_at: m.created_at }));
+const exportAll = async () => {
+let allLetters = [];
+try { const { data } = await sb.from("letters").select("*").order("created_at", { ascending: true }); allLetters = data || []; } catch(e) {}
+downloadJson(`晴天的另一边-备份-${new Date().toISOString().slice(0, 10)}.json`, {
+exportedAt: new Date().toISOString(),
+persona: getPersona(),
+messages: cleanMsgs(),
+worldbook: world || [],
+songs: songs || [],
+photos: (photos || []).map(p2 => ({ src: p2.src, user_note: p2.user_note, caption: p2.caption, created_at: p2.created_at })),
+letters: allLetters,
+});
+};
 const persona = getPersona();
 const [pname, setPname] = React.useState(persona.name);
 const [pnick, setPnick] = React.useState(persona.nick);
@@ -1600,6 +2009,67 @@ return (
 </div>
 ))}
 </div>
+<div style={{ ...cardStyle, padding: "22px", marginBottom: 28 }}>
+<div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1, marginBottom: 6 }}>插件中心</div>
+<div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 12 }}>关闭的插件，聊天时不再进入他的视野；新注册的工具会自动出现在这里。</div>
+{ToolRegistry.map(t => (
+<div key={t.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${C.border}` }}>
+<span style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>{t.label || t.name}</span>
+<button className="btn" onClick={() => flipTool(t.name)} style={{ background: toolEnabled(t.name) ? "var(--primary-soft)" : "var(--hover)", color: toolEnabled(t.name) ? "var(--primary)" : C.textFaint, border: "none", borderRadius: 12, padding: "4px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{toolEnabled(t.name) ? "已启用" : "已停用"}</button>
+</div>
+))}
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${C.border}` }}>
+<span style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>桌宠 · 小螃蟹</span>
+<button className="btn" onClick={() => flipTool("pet")} style={{ background: toolEnabled("pet") ? "var(--primary-soft)" : "var(--hover)", color: toolEnabled("pet") ? "var(--primary)" : C.textFaint, border: "none", borderRadius: 12, padding: "4px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{toolEnabled("pet") ? "已启用" : "已停用"}</button>
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${C.border}` }}>
+<span style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>主动问候 · 来电</span>
+<button className="btn" onClick={() => flipTool("proactive")} style={{ background: toolEnabled("proactive") ? "var(--primary-soft)" : "var(--hover)", color: toolEnabled("proactive") ? "var(--primary)" : C.textFaint, border: "none", borderRadius: 12, padding: "4px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{toolEnabled("proactive") ? "已启用" : "已停用"}</button>
+</div>
+<div style={{ fontSize: 10, color: C.textFaint, marginTop: 10 }}>预留位：天气 · 日历 · 日记 · MCP · Ombre Brain</div>
+</div>
+<div style={{ ...cardStyle, padding: "22px", marginBottom: 28 }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+<div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1 }}>Token 中心</div>
+<button className="btn" onClick={fetchBalance} disabled={balLoading} style={{ ...TEXT_BTN, color: C.pink, fontSize: 11 }}>{balLoading ? "查询中..." : "刷新余额"}</button>
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingBottom: 12, borderBottom: `1px dashed ${C.border}` }}>
+<span style={{ fontSize: 12, color: C.textMuted }}>OpenRouter 余额</span>
+<span style={{ fontSize: 22, fontWeight: 300, fontFamily: "'Cormorant Garamond', serif", color: C.pink }}>{balance === null ? "--" : fmtMoney(balance)}</span>
+</div>
+<div style={{ padding: "10px 0", borderBottom: `1px dashed ${C.border}` }}>
+<div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textMuted }}>
+<span>今日 · {tstats.today.n} 次 · {fmtK(tstats.today.tk)} tk</span><span style={{ color: C.text }}>{fmtMoney(tstats.today.c)}</span>
+</div>
+{tstats.today.n > 0 && <div style={{ fontSize: 10.5, color: C.textFaint, marginTop: 4 }}>输入 {fmtK(tstats.today.pt)} · 输出 {fmtK(tstats.today.ct)}{tstats.today.rt > 0 ? ` · 思考 ${fmtK(tstats.today.rt)}` : ""}</div>}
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", fontSize: 12, color: C.textMuted, borderBottom: `1px dashed ${C.border}` }}>
+<span>本月 · {tstats.month.n} 次 · {fmtK(tstats.month.tk)} tk</span><span style={{ color: C.text }}>{fmtMoney(tstats.month.c)}</span>
+</div>
+{Object.keys(tstats.byModel).length > 0 && (
+<div style={{ padding: "10px 0", borderBottom: `1px dashed ${C.border}` }}>
+{Object.entries(tstats.byModel).sort((a, b) => b[1].c - a[1].c).map(([k, v]) => (
+<div key={k} style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, color: C.textFaint, padding: "3px 0" }}>
+<span>{k} · {fmtK(v.tk)} tk{tstats.month.c > 0 ? ` · ${Math.round(v.c / tstats.month.c * 100)}%` : ""}</span><span>{fmtMoney(v.c)}</span>
+</div>
+))}
+</div>
+)}
+{balance !== null && tstats.avg > 0 && (
+<div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", fontSize: 12, color: C.textMuted, borderBottom: `1px dashed ${C.border}` }}>
+<span>按最近均价估算，还能聊</span><span style={{ color: C.text }}>约 {Math.floor(balance / tstats.avg)} 条</span>
+</div>
+)}
+<div style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 12 }}>
+<span style={{ fontSize: 12, color: C.textMuted, flexShrink: 0 }}>本月预算 $</span>
+<input value={budget} onChange={e => setBudgetState(e.target.value)} placeholder="如 30" style={{ width: 70, background: "none", border: "none", borderBottom: `1px solid ${C.border}`, padding: "4px 0", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit" }} />
+<button className="btn" onClick={saveBudget} style={{ ...TEXT_BTN, color: C.pink, fontSize: 11 }}>保存</button>
+{budget && parseFloat(budget) > 0 && tstats.month.c > parseFloat(budget) * 0.9 && (
+<span style={{ fontSize: 11, color: "var(--danger)" }}>预算快用完了</span>
+)}
+</div>
+<div style={{ fontSize: 10, color: C.textFaint, marginTop: 10, lineHeight: 1.6 }}>费用由 OpenRouter 返回的真实计价累计；每条回复的花费显示在消息操作栏。</div>
+</div>
 <div style={{ ...cardStyle, padding: "22px" }}>
 <div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1, marginBottom: 12 }}>OpenRouter Key</div>
 <div style={{ display: "flex", alignItems: "center", gap: 6, borderBottom: `1px solid ${C.border}`, marginBottom: 14 }}>
@@ -1612,6 +2082,30 @@ return (
 <button className="btn" onClick={saveKey} style={{ ...TEXT_BTN, color: saved ? C.blue : C.pink }}>{saved ? "已保存 ✓" : "保存"}</button>
 </div>
 </div>
+<div style={{ ...cardStyle, padding: "22px", marginTop: 28 }}>
+<div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1, marginBottom: 12 }}>通话</div>
+{(() => {
+let cl = [];
+try { cl = JSON.parse(localStorage.getItem("call_log") || "[]").slice(-5).reverse(); } catch(e) {}
+if (!cl.length) return <div style={{ fontSize: 12, color: C.textFaint, fontStyle: "italic" }}>还没有通话记录。阳台右上角有个电话。</div>;
+const st = { answered: "已接通", declined: "拒接了", missed: "稍后再说" };
+return cl.map((x, i2) => (
+<div key={i2} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.textMuted, padding: "6px 0", borderBottom: i2 < cl.length - 1 ? `1px dashed ${C.border}` : "none" }}>
+<span>{x.dir === "in" ? "他打来" : "你拨出"} · {st[x.status] || x.status}{x.dur > 0 ? ` · ${fmtDur(x.dur)}` : ""}</span>
+<span style={{ color: C.textFaint }}>{new Date(x.t).toLocaleDateString("zh-CN")}</span>
+</div>
+));
+})()}
+</div>
+<div style={{ ...cardStyle, padding: "22px", marginTop: 28 }}>
+<div style={{ fontSize: 12, color: C.textFaint, letterSpacing: 1, marginBottom: 10 }}>数据与备份</div>
+<div style={{ fontSize: 11, color: C.textFaint, lineHeight: 1.7, marginBottom: 14 }}>这里的一切都属于你们，随时可以完整带走。</div>
+<div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+<button className="btn" onClick={() => downloadJson("聊天记录.json", cleanMsgs())} style={{ ...BTN, fontSize: 12, padding: "7px 14px" }}>导出聊天</button>
+<button className="btn" onClick={() => downloadJson("世界书.json", world || [])} style={{ ...BTN, fontSize: 12, padding: "7px 14px" }}>导出世界书</button>
+<button className="btn" onClick={exportAll} style={{ ...BTN, fontSize: 12, padding: "7px 14px" }}>全站备份</button>
+</div>
+</div>
 </div>
 );
 }
@@ -1619,8 +2113,10 @@ return (
 function App() {
 const [page, setPage] = React.useState("home");
 const [memories, setMemories] = React.useState([]);
-const [letter, setLetter] = React.useState(null);
-const [photos, setPhotos] = React.useState([]);
+const [letter, setLetterState] = React.useState(null);
+const setLetter = (v) => setLetterState(prev => { const next = typeof v === "function" ? v(prev) : v; setLetterCache(next); return next; });
+const [photos, setPhotosState] = React.useState([]);
+const setPhotos = (v) => setPhotosState(prev => { const next = typeof v === "function" ? v(prev) : v; setGalleryCache(next); return next; });
 const [messages, setMessages] = React.useState([]);
 const [world, setWorldState] = React.useState([]);
 const updateWorld = (list) => { setWorldState(list); setWorldCache(list); };
@@ -1688,6 +2184,34 @@ const u = () => { const n = new Date(); setTimeStr(n.toLocaleTimeString([], { ho
 u(); const t = setInterval(u, 1000); return () => clearInterval(t);
 }, []);
 
+// 主动问候引擎:每天第一次打开,他可能先开口;久别或纪念日,他会打来电话
+React.useEffect(() => {
+const t = setTimeout(async () => {
+try {
+if (!toolEnabled("proactive") || !getApiKey()) return;
+const today = new Date().toDateString();
+const lastSeen = parseInt(localStorage.getItem("last_seen") || "0", 10);
+const gapH = lastSeen ? (Date.now() - lastSeen) / 3600000 : 0;
+localStorage.setItem("last_seen", String(Date.now()));
+if (localStorage.getItem("proactive_date") === today) return;
+localStorage.setItem("proactive_date", today);
+const d = new Date();
+if (d.getDate() === 23 || gapH > 48) {
+Bus.emit("call:incoming", { line: d.getDate() === 23 ? "今天是23号。想听听你的声音。" : "好几天没见你了。" });
+return;
+}
+const msg = await ChatProvider.complete([{ role: "user", content: `（她刚回到《晴天的另一边》，现在是${d.getHours()}点。你想主动对她说一句话——可以接着最近聊的事、最近的信或照片说，一两句就好，自然，不要客套问候，不要提"网页"。）` }], null);
+const clean = extractChoices(extractSong(msg).body).body || msg;
+const now = new Date().toISOString();
+setMessages(prev => [...prev, { role: "assistant", content: clean, type: "text", created_at: now }]);
+try { await sb.from("messages").insert([{ role: "assistant", content: clean, type: "text" }]); } catch(e) {}
+logLife(`${getPersona().name}主动说了句话`);
+Bus.emit("pet", { mood: "happy", note: "他有话对你说，去阳台看看", ms: 8000 });
+} catch(e) {}
+}, 6000);
+return () => clearTimeout(t);
+}, []);
+
 const navItems = [{ id: "home", label: "小屋" }, { id: "window", label: "阳台" }, { id: "mailbox", label: "信箱" }, { id: "shelf", label: "书架" }, { id: "profile", label: "我的" }];
 
 const renderPage = () => {
@@ -1696,6 +2220,7 @@ case "home": return <HomePage onNav={setPage} letter={letter} memories={memories
 case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} messages={messages} onBack={() => setPage("home")} />;
 case "music": return <MusicPage songs={songs} setSongs={updateSongs} onBack={() => setPage("home")} />;
 case "worldbook": return <WorldbookPage world={world} setWorld={updateWorld} messages={messages} onBack={() => setPage("home")} />;
+case "search": return <SearchPage messages={messages} photos={photos} world={world} songs={songs} onBack={() => setPage("home")} />;
 case "shelf": return <ShelfPage memories={memories} setMemories={setMemories} onBack={() => setPage("home")} />;
 case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} messages={messages} onBack={() => setPage("home")} />;
 case "window":
@@ -1709,7 +2234,7 @@ avatars={avatars}
 onWorld={updateWorld}
 onSongs={updateSongs}
 />
-case "profile": return (<ProfilePage photos={photos} letter={letter} onNav={setPage} onBack={() => setPage("home")} avatars={avatars} setAvatar={setAvatar} theme={theme} onToggleTheme={toggleTheme} />);
+case "profile": return (<ProfilePage photos={photos} letter={letter} onNav={setPage} onBack={() => setPage("home")} avatars={avatars} setAvatar={setAvatar} theme={theme} onToggleTheme={toggleTheme} messages={messages} world={world} songs={songs} />);
 default: return null;
 }
 };
@@ -1718,6 +2243,8 @@ const wide = page === "window";
 return (
 <div className="themed" style={{ background: C.bg, minHeight: "100dvh", maxWidth: wide ? 760 : 480, margin: "0 auto", position: "relative", paddingTop: "env(safe-area-inset-top)", transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
 <div style={{ paddingBottom: 75 }}>{renderPage()}</div>
+<DeskPet page={page} />
+<CallLayer setMessages={setMessages} />
 <div className="themed" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: wide ? 760 : 480, background: C.bg, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "12px 8px calc(14px + env(safe-area-inset-bottom))", zIndex: 100, transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
 {navItems.map(n => (<button key={n.id} className="nav-btn" onClick={() => setPage(n.id)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12, letterSpacing: 1, color: page===n.id?C.pink:C.textFaint, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative", width: "18%", padding: "8px 0" }}><span style={{ fontWeight: page===n.id?500:300, transform: page===n.id?"scale(1.08)":"scale(1)", transition: "transform 0.2s ease-in-out", display: "inline-block" }}>{n.label}</span>{page===n.id&&<div style={{ width: 10, height: 2, background: C.pink, borderRadius: 1, position: "absolute", bottom: 0 }} />}</button>))}
 </div>
