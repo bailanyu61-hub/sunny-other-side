@@ -1,0 +1,23 @@
+name: keep-supabase-awake
+# 每天自动戳一下 Supabase，防止免费版项目闲置 7 天自动暂停。
+# 设一次即可，之后全自动，不花钱、不用管。
+
+on:
+  schedule:
+    - cron: '17 3 * * *'   # 每天 UTC 03:17（≈ 北京时间 11:17）跑一次
+  workflow_dispatch: {}     # 也可在 Actions 页面手动点 Run workflow 立即测试
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST
+        run: |
+          code=$(curl -s -o /dev/null -w "%{http_code}" \
+            "https://nwmrrmpgdlrttfqidlgc.supabase.co/rest/v1/messages?select=id&limit=1" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im53bXJybXBnZGxydHRmcWlkbGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3ODkwNjYsImV4cCI6MjA5NTM2NTA2Nn0.6KJZ9hqC-JacXqBxFduhFj_N7ZCIiUP4SZwuR67fAZk")
+          echo "Supabase 返回 HTTP $code"
+          if [ "$code" != "200" ] && [ "$code" != "206" ]; then
+            echo "戳库失败：$code"; exit 1
+          fi
+          echo "保活成功，项目今天醒着 🌤"
