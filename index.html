@@ -625,7 +625,7 @@ const img = new Image();
 const r = new FileReader();
 r.onload = e => {
 img.onload = () => {
-const c = document.createElement("canvas"); const s = 128; c.width = c.height = s;
+const c = document.createElement("canvas"); const s = 256; c.width = c.height = s;
 const ctx = c.getContext("2d"); const m = Math.min(img.width, img.height);
 ctx.drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, s, s);
 resolve(c.toDataURL("image/jpeg", 0.85));
@@ -703,7 +703,7 @@ const confirm = () => {
 const cv = canvasRef.current; const img = imgRef.current; if (!cv || !img) return;
 const size = cv.width; const cs = size * 0.72; const cxp = (size - cs) / 2; const cyp = (size - cs) / 2;
 const s = stateRef.current;
-const out = document.createElement("canvas"); out.width = out.height = 128;
+const out = document.createElement("canvas"); out.width = out.height = 256;
 const octx = out.getContext("2d");
 const srcX = (cxp - s.ox) / s.scale; const srcY = (cyp - s.oy) / s.scale;
 const srcW = cs / s.scale;
@@ -1020,7 +1020,7 @@ return (
 <button className="act" onClick={() => { setCommentOn(commentOn === mo.id ? null : mo.id); setCtext(""); }} style={{ color: "var(--text-faint)", fontSize: 12.5 }}>评论</button>
 </div>
 {mo.comments.length > 0 && (<div style={{ marginTop: 10, background: "var(--hover)", borderRadius: 10, padding: "8px 11px" }}>{mo.comments.map((c, ci) => (<div key={ci} style={{ fontSize: 12.5, color: C.text, lineHeight: 1.75 }}><span style={{ color: "var(--primary)" }}>{c.who === "ko" ? persona.name : persona.nick}</span>：{c.text}</div>))}</div>)}
-{commentOn === mo.id && (<div style={{ display: "flex", gap: 8, marginTop: 10 }}><input autoFocus value={ctext} onChange={e => setCtext(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && ctext.trim()) { onComment(mo.id, ctext.trim()); setCtext(""); } }} placeholder="说点什么……" style={{ flex: 1, background: "var(--hover)", border: "none", borderRadius: 10, padding: "7px 11px", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit" }} /><button className="btn" onClick={() => { if (ctext.trim()) { onComment(mo.id, ctext.trim()); setCtext(""); } }} style={{ ...TEXT_BTN, color: C.pink, fontSize: 12 }}>发送</button></div>)}
+{commentOn === mo.id && (<div style={{ display: "flex", gap: 0, marginTop: 10, background: "var(--hover)", borderRadius: 10, alignItems: "center" }}><input autoFocus value={ctext} onChange={e => setCtext(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && ctext.trim()) { onComment(mo.id, ctext.trim()); setCtext(""); } }} placeholder="说点什么……" style={{ flex: 1, minWidth: 0, background: "none", border: "none", borderRadius: 10, padding: "7px 11px", fontSize: 13, outline: "none", color: C.text, fontFamily: "inherit" }} /><button className="btn" onClick={() => { if (ctext.trim()) { onComment(mo.id, ctext.trim()); setCtext(""); } }} style={{ background: "none", border: "none", color: "var(--primary)", fontSize: 12, padding: "7px 12px", cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>发送</button></div>)}
 </div>
 </div>
 </div>
@@ -1641,7 +1641,8 @@ onAutoActions,
 onOpenMenu,
 chatBg,
 bgBlur,
-bgDim
+bgDim,
+kbUp
 }) {
 const msgs = messages;
 const [input, setInput] = React.useState(() => { try { return localStorage.getItem("chat_draft") || ""; } catch(e) { return ""; } });
@@ -1688,6 +1689,7 @@ longPressTimer.current = setTimeout(() => { setLongPressMenu({ key, role, msgIdx
 };
 const cancelLongPress = () => { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } };
 const [expandedThink, setExpandedThink] = React.useState({});
+const [showToken, setShowToken] = React.useState({});
 const [editingIdx, setEditingIdx] = React.useState(null);
 const [editText, setEditText] = React.useState("");
 const [pinned, setPinnedState] = React.useState(() => { try { return JSON.parse(localStorage.getItem("pinned_quote") || "null"); } catch(e) { return null; } });
@@ -1700,18 +1702,6 @@ const msgsRef = React.useRef(msgs);
 const paceRef = React.useRef({});
 React.useEffect(() => { msgsRef.current = msgs; }, [msgs]);
 React.useEffect(() => () => { Object.values(paceRef.current).forEach(t => t && clearTimeout(t)); }, []);
-const [kbHeight, setKbHeight] = React.useState(0);
-React.useEffect(() => {
-const vv = window.visualViewport;
-if (!vv) return;
-const onResize = () => {
-const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-setKbHeight(kb);
-};
-vv.addEventListener("resize", onResize);
-vv.addEventListener("scroll", onResize);
-return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); };
-}, []);
 const scrollRef = React.useRef(null);
 const scrollToBottom = (smooth) => { const el = scrollRef.current; if (!el) return; el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" }); };
 const onScroll = () => { const el = scrollRef.current; if (!el) return; setShowDown(el.scrollHeight - el.scrollTop - el.clientHeight > 300); };
@@ -2000,9 +1990,10 @@ const showChoices = isAiText && doneAll && parsed.choices && i === msgs.length -
 const prevM = msgs[i - 1];
 const prevReal = (function(){ for (let k = i - 1; k >= 0; k--) { if (msgs[k].type !== "poke") return msgs[k]; } return null; })();
 const showHeader = !prevReal || prevReal.role !== m.role;
+const showTimeChipAi = isAiText && showTimeChip(i);
 return (
 <React.Fragment key={m.id || m.localId || i}>
-{showTimeChip(i) && (<div style={{ display: "flex", justifyContent: "center", margin: "16px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
+{showTimeChip(i) && !isAiText && (<div style={{ display: "flex", justifyContent: "center", margin: "16px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
 {!isAiText && (
 <React.Fragment>
 <div className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "flex-start" }}>
@@ -2031,13 +2022,16 @@ return (
 )}
 {isAiText && (
 <React.Fragment>
-{m.reasoning && (
+{(showTimeChipAi || m.reasoning) && (
 <div style={{ margin: "6px 0 2px 40px", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<button className="act" onClick={() => setExpandedThink(st => ({ ...st, [i]: !st[i] }))} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-faint)", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}>
+<div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+{showTimeChipAi && <span style={{ fontSize: 10.5, color: C.textFaint, letterSpacing: 0.3 }}>{fmtTime(m.created_at)}</span>}
+{m.reasoning && <button className="act" onClick={() => setExpandedThink(st => ({ ...st, [i]: !st[i] }))} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-faint)", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}>
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="6" r="2.2" fill="var(--text-faint)"/><circle cx="16" cy="6" r="2.2" fill="var(--text-faint)"/><circle cx="4.5" cy="11" r="1.8" fill="var(--text-faint)"/><circle cx="19.5" cy="11" r="1.8" fill="var(--text-faint)"/><ellipse cx="12" cy="15.5" rx="5.5" ry="4.5" fill="var(--text-faint)"/></svg>
 {m.phase === "reasoning" ? "思考中…" : (m.thinkSec ? `${m.thinkSec}s` : "")} {expandedThink[i] ? "▾" : "▸"}
-</button>
-{expandedThink[i] && <div style={{ fontSize: 12, color: C.textMuted, background: "var(--hover)", borderRadius: 12, padding: "10px 12px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginTop: 4, maxWidth: "80%", maxHeight: 240, overflowY: "auto" }}>{m.reasoning}</div>}
+</button>}
+</div>
+{m.reasoning && expandedThink[i] && <div style={{ fontSize: 12, color: C.textMuted, background: "var(--hover)", borderRadius: 12, padding: "10px 12px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginTop: 4, maxWidth: "80%", maxHeight: 240, overflowY: "auto" }}>{m.reasoning}</div>}
 </div>
 )}
 {visible.map((seg, si) => {
@@ -2047,11 +2041,11 @@ return (
 <div key={akey} className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start", gap: 8, alignItems: "flex-start" }}>
 <span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0, animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={32} /></span>
 <div style={{ maxWidth: "85%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "text", WebkitUserSelect: "text" }}>
+<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "text", WebkitUserSelect: "text" }}>
 <Md text={seg} />
 </div>
-{isLastSeg && m.usage && (
-<span style={{ fontSize: 10, color: C.textFaint, marginLeft: 2, marginTop: 2, whiteSpace: "nowrap" }}>{(m.usage.prompt_tokens || 0) + (m.usage.completion_tokens || 0)} tk{typeof m.usage.cost === "number" && m.usage.cost > 0 ? ` · ${fmtMoney(m.usage.cost)}` : ""}</span>
+{isLastSeg && m.usage && showToken[i] && (
+<span className="msg-appear" style={{ fontSize: 10, color: C.textFaint, marginLeft: 2, marginTop: 2, whiteSpace: "nowrap" }}>{(m.usage.prompt_tokens || 0) + (m.usage.completion_tokens || 0)} tk{typeof m.usage.cost === "number" && m.usage.cost > 0 ? ` · ${fmtMoney(m.usage.cost)}` : ""}</span>
 )}
 </div>
 </div>
@@ -2070,7 +2064,8 @@ return (
 </div>
 )}
 {pending && (
-<div className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start" }}>
+<div className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start", gap: 8, alignItems: "flex-start" }}>
+<span style={{ display: "inline-flex", flexShrink: 0 }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={32} /></span>
 <div style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--text-muted)", borderRadius: 18, padding: "10px 14px", fontSize: 12.5, fontStyle: "italic", fontWeight: 300 }}>
 {!m.content && m.phase === "reasoning" ? <React.Fragment>{persona.name}正在组织语言<Dots /></React.Fragment> : !m.content ? <React.Fragment>{persona.name}正在思考<Dots /></React.Fragment> : <React.Fragment>{persona.name}正在输入<Dots /></React.Fragment>}
 </div>
@@ -2119,7 +2114,7 @@ return (
 {showDown && (
 <button className="btn" onClick={() => scrollToBottom(true)} title="回到最新" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: "calc(106px + env(safe-area-inset-bottom))", zIndex: 30, width: 36, height: 36, borderRadius: "50%", border: `1px solid ${C.border}`, background: C.cardBg, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--card-shadow)", fontSize: 15 }}>↓</button>
 )}
-<div style={{ padding: kbHeight > 0 ? `12px 20px ${kbHeight}px` : "12px 20px calc(22px + env(safe-area-inset-bottom))", background: chatBg ? "transparent" : C.bg, transition: "padding 0.15s ease-out" }}>
+<div style={{ padding: kbUp ? "8px 20px 6px" : "12px 20px calc(80px + env(safe-area-inset-bottom))", background: "transparent", transition: "padding 0.15s ease-out" }}>
 <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
 {modelOpen && (
 <div className="pop" style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 8, ...cardStyle, padding: 14, width: 252, zIndex: 20, transformOrigin: "bottom right" }}>
@@ -2522,6 +2517,15 @@ return cl.map((x, i2) => (
 
 function App() {
 const [page, setPage] = React.useState("home");
+const [kbUp, setKbUp] = React.useState(false);
+React.useEffect(() => {
+const vv = window.visualViewport;
+if (!vv) return;
+const onResize = () => { setKbUp(Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 80); };
+vv.addEventListener("resize", onResize);
+vv.addEventListener("scroll", onResize);
+return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); };
+}, []);
 const [memories, setMemories] = React.useState([]);
 const [letter, setLetterState] = React.useState(null);
 const setLetter = (v) => setLetterState(prev => { const next = typeof v === "function" ? v(prev) : v; setLetterCache(next); return next; });
@@ -2744,6 +2748,7 @@ onOpenMenu={() => setMenuOpen(true)}
 chatBg={chatBg}
 bgBlur={bgBlur}
 bgDim={bgDim}
+kbUp={kbUp}
 />
 case "profile": return (<ProfilePage photos={photos} letter={letter} onNav={setPage} onBack={() => setPage("home")} avatars={avatars} setAvatar={setAvatar} theme={theme} onToggleTheme={toggleTheme} messages={messages} world={world} songs={songs} />);
 default: return null;
@@ -2764,7 +2769,7 @@ return (
 <button onClick={() => setReloadKey(k => k + 1)} style={{ background: "rgba(255,255,255,0.25)", color: "#FFFFFF", border: "none", borderRadius: 10, padding: "3px 12px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>重试</button>
 </div>
 )}
-<div className="themed" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: wide ? 760 : 480, background: C.bg, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-around", padding: "12px 8px calc(14px + env(safe-area-inset-bottom))", zIndex: 100, transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
+<div className="themed" style={{ position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: wide ? 760 : 480, background: C.bg, borderTop: `1px solid ${C.border}`, display: kbUp ? "none" : "flex", justifyContent: "space-around", padding: "12px 8px calc(14px + env(safe-area-inset-bottom))", zIndex: 100, transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
 {navItems.map(n => n.big ? (
 <button key={n.id} className="nav-btn" onClick={() => setPage(n.id)} style={{ background: page===n.id?"var(--primary)":"var(--primary-soft)", border: "none", cursor: "pointer", width: 52, height: 52, borderRadius: "50%", marginTop: -18, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.12)", flexShrink: 0, transition: "background 0.2s ease-in-out" }}>
 <span style={{ fontSize: 12, letterSpacing: 1, color: page===n.id?"#FFFFFF":"var(--primary)", fontWeight: 400 }}>{n.label}</span>
