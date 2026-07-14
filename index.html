@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-11-歌单QQ">
+<meta name="version" content="2026-07-14-施工单全6项">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -313,6 +313,7 @@ localStorage.setItem("life_log", JSON.stringify(log));
 function fmtDur(sec) { const m2 = Math.floor(sec / 60); const s2 = sec % 60; return `${m2}:${String(s2).padStart(2, "0")}`; }
 
 function toolEnabled(name) { try { return localStorage.getItem("tool_off_" + name) !== "1"; } catch(e) { return true; } }
+try { if (localStorage.getItem("tool_off_auto_moments") === null && localStorage.getItem("tool_init_auto_moments") === null) { localStorage.setItem("tool_off_auto_moments", "1"); localStorage.setItem("tool_init_auto_moments", "1"); } } catch(e) {}
 
 // 聊天提供者:以后接 Anthropic 直连 / Gemini 等,实现同接口替换即可
 const OpenRouterProvider = {
@@ -587,6 +588,7 @@ return segs;
 function buildHistory(arr) {
 const out = [];
 for (const m of arr) {
+if (m.type === "image") { const _c = "（发了一张照片）" + (m.content || ""); const _l = out[out.length - 1]; if (_l && _l.role === m.role) _l.content += "\n" + _c; else out.push({ role: m.role, content: _c }); continue; }
 if (m.type !== "text" || !m.content || m.error) continue;
 let cont = m.content;
 if (typeof cont === "string" && cont.indexOf("[[q]]") === 0) { const _e = cont.indexOf("[[/q]]"); if (_e > -1) cont = "（引用「" + cont.slice(5, _e) + "」）" + cont.slice(_e + 6); }
@@ -632,6 +634,101 @@ img.src = e.target.result;
 };
 r.readAsDataURL(file);
 });
+}
+function fileToDataUrl(file) {
+return new Promise(resolve => { const r = new FileReader(); r.onload = e => resolve(e.target.result); r.readAsDataURL(file); });
+}
+function AvatarCropper({ imgSrc, onConfirm, onCancel }) {
+const canvasRef = React.useRef(null);
+const imgRef = React.useRef(null);
+const stateRef = React.useRef({ ox: 0, oy: 0, scale: 1, dragging: false, sx: 0, sy: 0, lastDist: 0, baseScale: 1 });
+const [loaded, setLoaded] = React.useState(false);
+const draw = () => {
+const cv = canvasRef.current; const img = imgRef.current; if (!cv || !img) return;
+const ctx = cv.getContext("2d"); const s = stateRef.current; const size = cv.width;
+ctx.clearRect(0, 0, size, size);
+const w = img.width * s.scale; const h = img.height * s.scale;
+ctx.drawImage(img, s.ox, s.oy, w, h);
+const cs = size * 0.72; const cxp = (size - cs) / 2; const cyp = (size - cs) / 2;
+ctx.fillStyle = "rgba(0,0,0,0.45)";
+ctx.fillRect(0, 0, size, cyp);
+ctx.fillRect(0, cyp + cs, size, size - cyp - cs);
+ctx.fillRect(0, cyp, cxp, cs);
+ctx.fillRect(cxp + cs, cyp, size - cxp - cs, cs);
+ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
+ctx.strokeRect(cxp, cyp, cs, cs);
+};
+React.useEffect(() => {
+const img = new Image(); img.onload = () => {
+imgRef.current = img;
+const cv = canvasRef.current; if (!cv) return;
+const size = cv.width;
+const fitScale = size / Math.min(img.width, img.height);
+stateRef.current.scale = fitScale;
+stateRef.current.ox = (size - img.width * fitScale) / 2;
+stateRef.current.oy = (size - img.height * fitScale) / 2;
+setLoaded(true);
+}; img.src = imgSrc;
+}, [imgSrc]);
+React.useEffect(() => { if (loaded) draw(); }, [loaded]);
+const onPointerDown = (e) => {
+e.preventDefault();
+const s = stateRef.current; s.dragging = true;
+const cx = e.touches ? e.touches[0].clientX : e.clientX;
+const cy = e.touches ? e.touches[0].clientY : e.clientY;
+s.sx = cx - s.ox; s.sy = cy - s.oy;
+if (e.touches && e.touches.length === 2) {
+const dx = e.touches[0].clientX - e.touches[1].clientX;
+const dy = e.touches[0].clientY - e.touches[1].clientY;
+s.lastDist = Math.sqrt(dx * dx + dy * dy); s.baseScale = s.scale;
+}
+};
+const onPointerMove = (e) => {
+e.preventDefault();
+const s = stateRef.current; if (!s.dragging) return;
+if (e.touches && e.touches.length === 2) {
+const dx = e.touches[0].clientX - e.touches[1].clientX;
+const dy = e.touches[0].clientY - e.touches[1].clientY;
+const dist = Math.sqrt(dx * dx + dy * dy);
+if (s.lastDist > 0) { s.scale = Math.max(0.2, Math.min(5, s.baseScale * (dist / s.lastDist))); }
+} else {
+const cx = e.touches ? e.touches[0].clientX : e.clientX;
+const cy = e.touches ? e.touches[0].clientY : e.clientY;
+s.ox = cx - s.sx; s.oy = cy - s.sy;
+}
+draw();
+};
+const onPointerUp = () => { stateRef.current.dragging = false; stateRef.current.lastDist = 0; };
+const confirm = () => {
+const cv = canvasRef.current; const img = imgRef.current; if (!cv || !img) return;
+const size = cv.width; const cs = size * 0.72; const cxp = (size - cs) / 2; const cyp = (size - cs) / 2;
+const s = stateRef.current;
+const out = document.createElement("canvas"); out.width = out.height = 128;
+const octx = out.getContext("2d");
+const srcX = (cxp - s.ox) / s.scale; const srcY = (cyp - s.oy) / s.scale;
+const srcW = cs / s.scale;
+octx.drawImage(img, srcX, srcY, srcW, srcW, 0, 0, 128, 128);
+onConfirm(out.toDataURL("image/jpeg", 0.85));
+};
+const zoomIn = () => { stateRef.current.scale = Math.min(5, stateRef.current.scale * 1.25); draw(); };
+const zoomOut = () => { stateRef.current.scale = Math.max(0.2, stateRef.current.scale * 0.8); draw(); };
+return (
+<div className="fadebg" style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.85)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20 }}>
+<div style={{ fontSize: 14, color: "#fff", marginBottom: 14, fontWeight: 300 }}>拖动调整位置，双指缩放</div>
+<canvas ref={canvasRef} width={280} height={280} style={{ borderRadius: 12, touchAction: "none", cursor: "move" }}
+onMouseDown={onPointerDown} onMouseMove={onPointerMove} onMouseUp={onPointerUp} onMouseLeave={onPointerUp}
+onTouchStart={onPointerDown} onTouchMove={onPointerMove} onTouchEnd={onPointerUp}
+/>
+<div style={{ display: "flex", gap: 16, marginTop: 14 }}>
+<button className="btn" onClick={zoomOut} style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 12, padding: "6px 16px", fontSize: 16, cursor: "pointer" }}>−</button>
+<button className="btn" onClick={zoomIn} style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "none", borderRadius: 12, padding: "6px 16px", fontSize: 16, cursor: "pointer" }}>＋</button>
+</div>
+<div style={{ display: "flex", gap: 16, marginTop: 20 }}>
+<button className="btn" onClick={onCancel} style={{ background: "rgba(255,255,255,0.12)", color: "#fff", border: "none", borderRadius: 16, padding: "10px 28px", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>取消</button>
+<button className="btn" onClick={confirm} style={{ background: "var(--primary)", color: "#fff", border: "none", borderRadius: 16, padding: "10px 28px", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>确认</button>
+</div>
+</div>
+);
 }
 
 function Avatar({ src, fallback, size = 32 }) {
@@ -916,7 +1013,7 @@ return (
 <div style={{ flex: 1, minWidth: 0 }}>
 <div style={{ fontSize: 13, color: "var(--primary)", fontWeight: 400 }}>{isKo ? persona.name : persona.nick}</div>
 {mo.text && (<div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, marginTop: 3, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>{mo.text}</div>)}
-{mo.image && (<img src={mo.image} style={{ marginTop: 8, maxWidth: "100%", maxHeight: 280, borderRadius: 12, display: "block" }} />)}
+{mo.image && (<img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, maxWidth: "100%", maxHeight: 280, borderRadius: 12, display: "block", cursor: "pointer" }} />)}
 <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
 <span style={{ fontSize: 11, color: C.textFaint }}>{fmtMomentTime(mo.created_at)}</span>
 <button className="act" onClick={() => onLike(mo.id)} style={{ display: "flex", alignItems: "center", color: mo.liked ? "var(--danger)" : "var(--text-faint)", fontSize: 15 }}>{mo.liked ? "♥" : "♡"}</button>
@@ -932,6 +1029,22 @@ return (
 </div>
 );
 }
+function Lightbox() {
+const [src, setSrc] = React.useState("");
+React.useEffect(() => {
+const h = (e) => setSrc(e.detail || "");
+window.addEventListener("lightbox", h);
+return () => window.removeEventListener("lightbox", h);
+}, []);
+if (!src) return null;
+return (
+<div className="fadebg" onClick={() => setSrc("")} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+<img src={src} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 8 }} />
+<button onClick={() => setSrc("")} style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + 14px)", right: 18, background: "rgba(255,255,255,0.15)", color: "#FFF", border: "none", borderRadius: "50%", width: 34, height: 34, fontSize: 16, cursor: "pointer" }}>✕</button>
+</div>
+);
+}
+function openLightbox(src) { try { window.dispatchEvent(new CustomEvent("lightbox", { detail: src })); } catch(e) {} }
 function TopBar({ timeStr, theme, onToggleTheme, onSearch }) {
 return (<div className="themed" style={{ padding: "16px 24px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.bg }}>
 <div style={{ fontSize: 13, color: C.textMuted, fontFamily: "sans-serif" }}>{timeStr}</div>
@@ -1551,6 +1664,13 @@ let suffix = ""; try { suffix = localStorage.getItem("poke_suffix") || ""; } cat
 const line = "你戳了戳" + persona.name + suffix;
 setMessages(prev => [...prev, { localId: "pk" + Date.now(), role: "user", type: "poke", content: line, created_at: new Date().toISOString() }]);
 try { sb.from("messages").insert([{ role: "user", content: line, type: "poke" }]); } catch(e) {}
+const backs = ["……干嘛。", "嗯嗯，在。", "别戳了。", "……痒。", "手别乱动。", "再戳，我戳回去了。", "嗯嗯。听到了。"];
+const back = backs[Math.floor(Math.random() * backs.length)];
+setTimeout(function(){
+const now2 = new Date().toISOString();
+setMessages(prev => [...prev, { localId: "pb" + Date.now(), role: "assistant", type: "text", content: back, created_at: now2, paced: false }]);
+try { sb.from("messages").insert([{ role: "assistant", content: back, type: "text" }]); } catch(e) {}
+}, 1100);
 };
 const onKoAvatarTap = () => { const now = Date.now(); if (now - lastTapRef.current < 320) { lastTapRef.current = 0; pokeKo(); } else { lastTapRef.current = now; } };
 const [modelOpen, setModelOpen] = React.useState(false);
@@ -1561,6 +1681,12 @@ const persona = getPersona();
 const applyModel = (id) => { try { localStorage.setItem("chat_model", id); } catch(e) {} setModelId(id); };
 const applyThink = (v) => { try { localStorage.setItem("think_mode", v); } catch(e) {} setThinkModeState(v); };
 const [activeActions, setActiveActions] = React.useState(null);
+const [longPressMenu, setLongPressMenu] = React.useState(null);
+const longPressTimer = React.useRef(null);
+const startLongPress = (key, role, msgIdx, seg, isLastSeg) => {
+longPressTimer.current = setTimeout(() => { setLongPressMenu({ key, role, msgIdx, seg, isLastSeg }); }, 500);
+};
+const cancelLongPress = () => { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } };
 const [expandedThink, setExpandedThink] = React.useState({});
 const [editingIdx, setEditingIdx] = React.useState(null);
 const [editText, setEditText] = React.useState("");
@@ -1574,6 +1700,18 @@ const msgsRef = React.useRef(msgs);
 const paceRef = React.useRef({});
 React.useEffect(() => { msgsRef.current = msgs; }, [msgs]);
 React.useEffect(() => () => { Object.values(paceRef.current).forEach(t => t && clearTimeout(t)); }, []);
+const [kbHeight, setKbHeight] = React.useState(0);
+React.useEffect(() => {
+const vv = window.visualViewport;
+if (!vv) return;
+const onResize = () => {
+const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+setKbHeight(kb);
+};
+vv.addEventListener("resize", onResize);
+vv.addEventListener("scroll", onResize);
+return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); };
+}, []);
 const scrollRef = React.useRef(null);
 const scrollToBottom = (smooth) => { const el = scrollRef.current; if (!el) return; el.scrollTo({ top: el.scrollHeight, behavior: smooth ? "smooth" : "auto" }); };
 const onScroll = () => { const el = scrollRef.current; if (!el) return; setShowDown(el.scrollHeight - el.scrollTop - el.clientHeight > 300); };
@@ -1802,7 +1940,7 @@ setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false)
 schedulePace(aMsg.localId, 1);
 try {
 const content = await runStream(history, aMsg.localId, false);
-try { await sb.from("messages").insert([{ role: "user", content: cap ? `（发了一张照片）${cap}` : "（发了一张照片给你看）", type: "text" }, { role: "assistant", content, type: "text" }]); } catch(e) {}
+try { await sb.from("messages").insert([{ role: "user", content: cap, type: "image", file_data: dataUrl }, { role: "assistant", content, type: "text" }]); } catch(e) {}
 trySaveSong(content);
 if (onAutoActions) { onAutoActions(content); if (/<moment>[\s\S]*?<\/moment>/.test(content)) showToast("他发了条朋友圈"); if (/<letter>[\s\S]*?<\/letter>/.test(content)) showToast("他写了封信给你"); }
 } catch(e) {
@@ -1830,9 +1968,9 @@ return (
 </div>
 </div>
 {pinned && (
-<div className="themed" style={{ background: C.bg }}>
+<div className="themed" style={{ background: chatBg ? "transparent" : C.bg }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 0" }}>
-<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start" }}>
+<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start", ...(chatBg ? { background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" } : {}) }}>
 <span style={{ marginTop: 2, display: "flex" }}><Icons.PinS /></span>
 <div style={{ flex: 1, minWidth: 0 }}>
 <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>今天最喜欢的一句话 · {pinned.date}</div>
@@ -1860,19 +1998,15 @@ const pending = isAiText ? (m.streaming || reveal < segs.length) : false;
 const doneAll = isAiText && !pending;
 const showChoices = isAiText && doneAll && parsed.choices && i === msgs.length - 1;
 const prevM = msgs[i - 1];
-const showHeader = !prevM || prevM.role !== m.role;
+const prevReal = (function(){ for (let k = i - 1; k >= 0; k--) { if (msgs[k].type !== "poke") return msgs[k]; } return null; })();
+const showHeader = !prevReal || prevReal.role !== m.role;
 return (
 <React.Fragment key={m.id || m.localId || i}>
 {showTimeChip(i) && (<div style={{ display: "flex", justifyContent: "center", margin: "16px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
 {!isAiText && (
 <React.Fragment>
-{showHeader && editingIdx !== i && (
-<div className="msg-appear" style={{ display: "flex", justifyContent: "flex-end", margin: "8px 0 3px" }}>
-<Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={28} />
-</div>
-)}
-<div className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-end" }}>
-<div style={{ maxWidth: editingIdx === i ? "100%" : "92%", flex: editingIdx === i ? 1 : "0 1 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+<div className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "flex-start" }}>
+<div style={{ maxWidth: editingIdx === i ? "100%" : "85%", flex: editingIdx === i ? 1 : "0 1 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
 {editingIdx === i ? (
 <div style={{ width: "100%" }}>
 <textarea autoFocus value={editText} onChange={e => setEditText(e.target.value)} rows={3} style={{ width: "100%", background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 16, padding: "10px 14px", fontSize: 14, lineHeight: 1.7, color: C.text, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
@@ -1883,43 +2017,25 @@ return (
 </div>
 ) : (
 <React.Fragment>
-<div onClick={() => { if (m.type === "text") setActiveActions(a => a === i ? null : i); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap" }}>
-{m.type === "image" && m.fileData && (<img src={m.fileData} alt="" style={{ maxWidth: 170, maxHeight: 220, borderRadius: 12, display: "block" }} />)}
+<div onTouchStart={() => startLongPress(i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: i, role: "user", msgIdx: i }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "text", WebkitUserSelect: "text" }}>
+{m.type === "image" && m.fileData && (<img src={m.fileData} alt="" onClick={() => openLightbox(m.fileData)} style={{ maxWidth: 128, maxHeight: 160, borderRadius: 10, display: "block", cursor: "pointer", objectFit: "cover" }} />)}
 {m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", marginTop: 6, lineHeight: 1.6 }}>{m.content}</div>)}
 {m.type === "text" && (function(){ const pq = parseQuote(m.content); return (<React.Fragment>{pq.quote && (<div style={{ borderLeft: "2px solid var(--bubble-user-text)", paddingLeft: 8, marginBottom: 5, fontSize: 12.5, lineHeight: 1.5, opacity: 0.6, maxHeight: 54, overflow: "hidden" }}>{pq.quote.length > 40 ? pq.quote.slice(0, 40) + "…" : pq.quote}</div>)}{pq.body}</React.Fragment>); })()}
 </div>
-{m.type === "text" && (
-<div className="msg-actions" style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 3, ...(activeActions === i ? { opacity: 1 } : {}) }}>
-<button className="act" title="复制" onClick={() => copyText(m.content)}><Icons.Copy /></button>
-<button className="act" title="引用" onClick={() => { setQuoting(parseQuote(m.content).body); setActiveActions(null); }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
-<button className="act" title="编辑" onClick={() => { setEditingIdx(i); setEditText(m.content); setActiveActions(null); }}><Icons.EditS /></button>
-<button className="act" title="删除" onClick={() => deleteMsg(i)}><Icons.Trash /></button>
-{m.versions && m.versions.length > 1 && (
-<span style={{ fontSize: 11, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 2, marginLeft: 4 }}>
-<button className="act" onClick={() => switchVersion(i, -1)}>‹</button>
-{((m.vi === undefined || m.vi === null) ? m.versions.length : m.vi + 1)}/{m.versions.length}
-<button className="act" onClick={() => switchVersion(i, 1)}>›</button>
-</span>
-)}
-</div>
-)}
 </React.Fragment>
 )}
 </div>
+<Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={32} />
 </div>
 </React.Fragment>
 )}
 {isAiText && (
 <React.Fragment>
-{showHeader && (
-<div className="msg-appear" style={{ display: "flex", justifyContent: "flex-start", margin: "8px 0 3px" }}>
-<span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={28} /></span>
-</div>
-)}
 {m.reasoning && (
-<div style={{ margin: "6px 0 2px 2px" }}>
-<button className="act" onClick={() => setExpandedThink(st => ({ ...st, [i]: !st[i] }))} style={{ fontSize: 11, color: "var(--text-faint)" }}>
-{m.phase === "reasoning" ? "深度思考中..." : `深度思考${m.thinkSec ? `（${m.thinkSec}s）` : ""}`} {expandedThink[i] ? "▾" : "▸"}
+<div style={{ margin: "6px 0 2px 40px", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+<button className="act" onClick={() => setExpandedThink(st => ({ ...st, [i]: !st[i] }))} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-faint)", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}>
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="6" r="2.2" fill="var(--text-faint)"/><circle cx="16" cy="6" r="2.2" fill="var(--text-faint)"/><circle cx="4.5" cy="11" r="1.8" fill="var(--text-faint)"/><circle cx="19.5" cy="11" r="1.8" fill="var(--text-faint)"/><ellipse cx="12" cy="15.5" rx="5.5" ry="4.5" fill="var(--text-faint)"/></svg>
+{m.phase === "reasoning" ? "思考中…" : (m.thinkSec ? `${m.thinkSec}s` : "")} {expandedThink[i] ? "▾" : "▸"}
 </button>
 {expandedThink[i] && <div style={{ fontSize: 12, color: C.textMuted, background: "var(--hover)", borderRadius: 12, padding: "10px 12px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginTop: 4, maxWidth: "80%", maxHeight: 240, overflowY: "auto" }}>{m.reasoning}</div>}
 </div>
@@ -1928,35 +2044,21 @@ return (
 const isLastSeg = doneAll && si === visible.length - 1;
 const akey = i + "-" + si;
 return (
-<div key={akey} className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start" }}>
-<div style={{ maxWidth: "92%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onClick={() => setActiveActions(a => a === akey ? null : akey)} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%" }}>
+<div key={akey} className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start", gap: 8, alignItems: "flex-start" }}>
+<span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0, animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={32} /></span>
+<div style={{ maxWidth: "85%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+<div onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "text", WebkitUserSelect: "text" }}>
 <Md text={seg} />
 </div>
-<div className="msg-actions" style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 3, ...(activeActions === akey ? { opacity: 1 } : {}) }}>
-<button className="act" title="复制" onClick={() => copyText(seg)}><Icons.Copy /></button>
-<button className="act" title="引用" onClick={() => { setQuoting(seg); setActiveActions(null); }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></button>
-<button className="act" title="固定这句话" onClick={() => setPin(seg)}><Icons.Pin /></button>
-{isLastSeg && <button className="act" title="重新生成" onClick={() => regenerate(i)}><Icons.Refresh /></button>}
-{isLastSeg && <button className="act" title="收藏（即将到来）" style={{ opacity: 0.35, cursor: "default" }}><Icons.Heart /></button>}
-{isLastSeg && <button className="act" title="删除整条回复" onClick={() => deleteMsg(i)}><Icons.Trash /></button>}
 {isLastSeg && m.usage && (
-<span style={{ fontSize: 10, color: C.textFaint, marginLeft: 6, whiteSpace: "nowrap" }}>{(m.usage.prompt_tokens || 0) + (m.usage.completion_tokens || 0)} tk{typeof m.usage.cost === "number" && m.usage.cost > 0 ? ` · ${fmtMoney(m.usage.cost)}` : ""}</span>
+<span style={{ fontSize: 10, color: C.textFaint, marginLeft: 2, marginTop: 2, whiteSpace: "nowrap" }}>{(m.usage.prompt_tokens || 0) + (m.usage.completion_tokens || 0)} tk{typeof m.usage.cost === "number" && m.usage.cost > 0 ? ` · ${fmtMoney(m.usage.cost)}` : ""}</span>
 )}
-{isLastSeg && m.versions && m.versions.length > 1 && (
-<span style={{ fontSize: 11, color: C.textFaint, display: "inline-flex", alignItems: "center", gap: 2, marginLeft: 4 }}>
-<button className="act" onClick={() => switchVersion(i, -1)}>‹</button>
-{((m.vi === undefined || m.vi === null) ? m.versions.length : m.vi + 1)}/{m.versions.length}
-<button className="act" onClick={() => switchVersion(i, 1)}>›</button>
-</span>
-)}
-</div>
 </div>
 </div>
 );
 })}
 {doneAll && songP.song && (
-<div className="msg-appear" style={{ marginLeft: 2, marginBottom: 8 }}>
+<div className="msg-appear" style={{ marginLeft: 40, marginBottom: 8 }}>
 <div style={{ ...cardStyle, padding: "12px 14px", maxWidth: 380, display: "flex", alignItems: "center", gap: 12 }}>
 <div style={{ width: 40, height: 40, borderRadius: 12, background: "var(--primary-soft)", color: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Music /></div>
 <div style={{ flex: 1, minWidth: 0 }}>
@@ -2017,7 +2119,7 @@ return (
 {showDown && (
 <button className="btn" onClick={() => scrollToBottom(true)} title="回到最新" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: "calc(106px + env(safe-area-inset-bottom))", zIndex: 30, width: 36, height: 36, borderRadius: "50%", border: `1px solid ${C.border}`, background: C.cardBg, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--card-shadow)", fontSize: 15 }}>↓</button>
 )}
-<div style={{ padding: "12px 20px calc(22px + env(safe-area-inset-bottom))", background: C.bg }}>
+<div style={{ padding: kbHeight > 0 ? `12px 20px ${kbHeight}px` : "12px 20px calc(22px + env(safe-area-inset-bottom))", background: chatBg ? "transparent" : C.bg, transition: "padding 0.15s ease-out" }}>
 <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
 {modelOpen && (
 <div className="pop" style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 8, ...cardStyle, padding: 14, width: 252, zIndex: 20, transformOrigin: "bottom right" }}>
@@ -2059,7 +2161,7 @@ return (
 <button className="btn" style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.textFaint, fontSize: 13, cursor: "default", display: "flex", alignItems: "center", gap: 8 }}><Icons.MicS /> 语音（即将到来）</button>
 </div>
 )}
-<div style={{ display: "flex", flexDirection: "column", gap: 4, background: C.cardBg, boxShadow: "var(--card-shadow)", border: `1px solid ${C.border}`, borderRadius: 22, padding: "10px 14px 8px" }}>
+<div style={{ display: "flex", flexDirection: "column", gap: 4, background: chatBg ? "rgba(255,255,255,0.5)" : C.cardBg, backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, boxShadow: "var(--card-shadow)", border: `1px solid ${chatBg ? "var(--glass-border)" : C.border}`, borderRadius: 22, padding: "10px 14px 8px" }}>
 <input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) pickImage(e.target.files[0]); e.target.value = null; }} />
 <textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ width: "100%", background: "none", border: "none", padding: "3px 2px", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6, boxSizing: "border-box" }} />
 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2075,6 +2177,31 @@ return (
 </div>
 </div>
 </div>
+{longPressMenu && (
+<div className="fadebg" onClick={() => setLongPressMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.25)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+<div className="sheet" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: C.cardBg, borderRadius: "18px 18px 0 0", padding: "14px 8px calc(env(safe-area-inset-bottom) + 14px)", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
+<div style={{ width: 36, height: 4, borderRadius: 2, background: C.border, margin: "0 auto 12px" }} />
+{longPressMenu.role === "user" && (
+<React.Fragment>
+<button className="btn" onClick={() => { copyText(msgs[longPressMenu.msgIdx]?.content); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>复制</button>
+<button className="btn" onClick={() => { setQuoting(parseQuote(msgs[longPressMenu.msgIdx]?.content).body); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>引用</button>
+<button className="btn" onClick={() => { setEditingIdx(longPressMenu.msgIdx); setEditText(msgs[longPressMenu.msgIdx]?.content); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>编辑</button>
+<button className="btn" onClick={() => { deleteMsg(longPressMenu.msgIdx); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: "var(--danger)", cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>删除</button>
+</React.Fragment>
+)}
+{longPressMenu.role === "ai" && (
+<React.Fragment>
+<button className="btn" onClick={() => { copyText(longPressMenu.seg); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>复制</button>
+<button className="btn" onClick={() => { setQuoting(longPressMenu.seg); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>引用</button>
+<button className="btn" onClick={() => { setPin(longPressMenu.seg); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>固定这句话</button>
+{longPressMenu.isLastSeg && <button className="btn" onClick={() => { regenerate(longPressMenu.msgIdx); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>重新生成</button>}
+{longPressMenu.isLastSeg && <button className="btn" onClick={() => { deleteMsg(longPressMenu.msgIdx); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: "var(--danger)", cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>删除整条回复</button>}
+</React.Fragment>
+)}
+<button className="btn" onClick={() => setLongPressMenu(null)} style={{ width: "100%", textAlign: "center", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.textMuted, cursor: "pointer", fontFamily: "inherit", borderRadius: 10, marginTop: 4 }}>取消</button>
+</div>
+</div>
+)}
 <style>{`@keyframes bop{0%,60%,100%{opacity:0.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}`}</style>
 </div>
 );
@@ -2227,12 +2354,17 @@ const copyKey = async () => { if (!apiKey) return; try { await navigator.clipboa
 const meInput = React.useRef(null);
 const koInput = React.useRef(null);
 const saveKey = () => { localStorage.setItem("openrouter_key", apiKey); setSaved(true); setTimeout(() => setSaved(false), 2000); };
+const [cropState, setCropState] = React.useState(null);
 const pick = async (who, e) => {
 const file = e.target.files?.[0];
 if (!file) return;
-const dataUrl = await fileToAvatar(file);
-setAvatar(who, dataUrl);
+const dataUrl = await fileToDataUrl(file);
+setCropState({ who, src: dataUrl });
 e.target.value = null;
+};
+const onCropConfirm = (croppedUrl) => {
+if (cropState) setAvatar(cropState.who, croppedUrl);
+setCropState(null);
 };
 return (
 <div className="page-enter" style={{ padding: "36px 26px 46px" }}>
@@ -2295,6 +2427,13 @@ return (
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${C.border}` }}>
 <span style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>主动问候 · 来电</span>
 <button className="btn" onClick={() => flipTool("proactive")} style={{ background: toolEnabled("proactive") ? "var(--primary-soft)" : "var(--hover)", color: toolEnabled("proactive") ? "var(--primary)" : C.textFaint, border: "none", borderRadius: 12, padding: "4px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>{toolEnabled("proactive") ? "已启用" : "已停用"}</button>
+</div>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 0", borderBottom: `1px dashed ${C.border}` }}>
+<div>
+<span style={{ fontSize: 13, color: C.text, fontWeight: 300 }}>主动发朋友圈</span>
+<div style={{ fontSize: 10, color: C.textFaint, marginTop: 2 }}>他会自己发动态、给你点赞评论（消耗余额）</div>
+</div>
+<button className="btn" onClick={() => flipTool("auto_moments")} style={{ background: toolEnabled("auto_moments") ? "var(--primary-soft)" : "var(--hover)", color: toolEnabled("auto_moments") ? "var(--primary)" : C.textFaint, border: "none", borderRadius: 12, padding: "4px 14px", fontSize: 11, cursor: "pointer", fontFamily: "inherit", flexShrink: 0 }}>{toolEnabled("auto_moments") ? "已启用" : "已停用"}</button>
 </div>
 <div style={{ fontSize: 10, color: C.textFaint, marginTop: 10 }}>预留位：天气 · 日历 · 日记 · MCP · Ombre Brain</div>
 </div>
@@ -2376,6 +2515,7 @@ return cl.map((x, i2) => (
 <button className="btn" onClick={exportAll} style={{ ...BTN, fontSize: 12, padding: "7px 14px" }}>全站备份</button>
 </div>
 </div>
+{cropState && <AvatarCropper imgSrc={cropState.src} onConfirm={onCropConfirm} onCancel={() => setCropState(null)} />}
 </div>
 );
 }
@@ -2409,7 +2549,7 @@ const setChatBg = (v) => { setChatBgState(v); try { if (v) localStorage.setItem(
 const setBgBlur = (v) => { setBgBlurState(v); try { localStorage.setItem("chat_bg_blur", String(v)); } catch(e) {} };
 const setBgDim = (v) => { setBgDimState(v); try { localStorage.setItem("chat_bg_dim", String(v)); } catch(e) {} };
 const persistMoment = async (mo) => { try { await sb.from("memories").update({ content: JSON.stringify({ text: mo.text, image: mo.image, liked: mo.liked, comments: mo.comments }) }).eq("id", mo.id); } catch(e) {} };
-const postMoment = async (text, image, author) => { const au = author || "me"; const d = { text: text || "", image: image || "", liked: false, comments: [] }; const tmpId = "mo" + Date.now(); setMoments(prev => [{ id: tmpId, author: au, created_at: new Date().toISOString(), text: d.text, image: d.image, liked: false, comments: [] }, ...prev]); try { const { data } = await sb.from("memories").insert({ summary: au, content: JSON.stringify(d), tags: ["__moment"] }).select().single(); if (data) setMoments(prev => prev.map(x => x.id === tmpId ? { ...x, id: data.id } : x)); } catch(e) {} };
+const postMoment = async (text, image, author) => { const au = author || "me"; const d = { text: text || "", image: image || "", liked: false, comments: [] }; const tmpId = "mo" + Date.now(); setMoments(prev => [{ id: tmpId, author: au, created_at: new Date().toISOString(), text: d.text, image: d.image, liked: false, comments: [] }, ...prev]); try { const { data } = await sb.from("memories").insert({ summary: au, content: JSON.stringify(d), tags: ["__moment"] }).select().single(); if (data) { setMoments(prev => prev.map(x => x.id === tmpId ? { ...x, id: data.id } : x)); if (au === "me") koReactToUserPost(data.id); } else if (au === "me") koReactToUserPost(tmpId); } catch(e) { if (au === "me") koReactToUserPost(tmpId); } };
 const likeMoment = (id) => setMoments(prev => prev.map(m => { if (m.id !== id) return m; const nm = { ...m, liked: !m.liked }; persistMoment(nm); return nm; }));
 const runAutoActions = async (content) => {
 try {
@@ -2448,6 +2588,32 @@ if (text) await postMoment(text, "", "ko");
 } catch(e) {}
 setGenMoment(false);
 };
+const koAutoPostIfReady = async () => {
+if (!toolEnabled("auto_moments")) return;
+try {
+const lastTs = localStorage.getItem("ko_last_auto_moment");
+if (lastTs && Date.now() - parseInt(lastTs) < 12 * 3600 * 1000) return;
+if (Math.random() > 0.5) return;
+localStorage.setItem("ko_last_auto_moment", String(Date.now()));
+await generateMoment();
+} catch(e) {}
+};
+const koReactToUserPost = async (userMoId) => {
+if (!toolEnabled("auto_moments")) return;
+try {
+await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
+const mo = moments.find(m => m.id === userMoId);
+if (!mo) return;
+likeMoment(userMoId);
+const p = getPersona();
+const sys = `你是${p.name}。${p.nick}刚在朋友圈发了这条动态：「${mo.text || "[图片]"}」。你现在给她评论一句，像男朋友在女朋友朋友圈下面评论那样——简短口语、宠溺或调侃，15字以内。只输出评论本身，不要引号。`;
+let text = await ChatProvider.complete([{ role: "user", content: "给她的动态评论一句。" }], sys);
+text = (text || "").trim().replace(/^[「""']+/, "").replace(/[」""']+$/, "").trim();
+if (text) commentMoment(userMoId, text, "ko");
+await new Promise(r => setTimeout(r, 3000 + Math.random() * 5000));
+await koAutoPostIfReady();
+} catch(e) {}
+};
 const [avatars, setAvatars] = React.useState({ me: getAvatar("me"), ko: getAvatar("ko") });
 
 const toggleTheme = () => { try { localStorage.setItem("skin", "auto"); } catch(e) {} setSkinState("auto"); setTheme(t => {
@@ -2469,6 +2635,16 @@ React.useEffect(() => {
 const t = setInterval(() => {
 if (!getManualTheme()) setTheme(getAutoTheme());
 }, 60000);
+return () => clearInterval(t);
+}, []);
+
+React.useEffect(() => {
+if (page === "moments") koAutoPostIfReady();
+}, [page]);
+
+React.useEffect(() => {
+if (!toolEnabled("auto_moments")) return;
+const t = setInterval(() => { koAutoPostIfReady(); }, 30 * 60 * 1000);
 return () => clearInterval(t);
 }, []);
 
@@ -2495,7 +2671,7 @@ const msgRes = await sb
 .order("created_at", { ascending: true });
 
 if (msgRes.error) throw msgRes.error;
-if (msgRes.data) setMessages(msgRes.data);
+if (msgRes.data) setMessages(msgRes.data.map(m => m.file_data ? { ...m, fileData: m.file_data } : m));
 const letterRes = await sb.from("letters").select("*").order("created_at", { ascending: false }).limit(1);
 if (letterRes.data && letterRes.data.length > 0) setLetter(letterRes.data[0]);
 setSyncState({ status: "ok", msg: (msgRes.data || []).length, mem: (memRes.data || []).length, error: "" });
@@ -2580,6 +2756,7 @@ return (
 <div style={{ paddingBottom: 75 }}>{renderPage()}</div>
 <DeskPet page={page} />
 <CallLayer setMessages={setMessages} />
+<Lightbox />
 <SkinMenu open={menuOpen} onClose={() => setMenuOpen(false)} skin={skin} onPick={pickSkin} chatBg={chatBg} setChatBg={setChatBg} bgBlur={bgBlur} setBgBlur={setBgBlur} bgDim={bgDim} setBgDim={setBgDim} />
 {syncState.status === "error" && (
 <div style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + 8px)", left: "50%", transform: "translateX(-50%)", zIndex: 400, display: "flex", alignItems: "center", gap: 10, background: "var(--danger)", color: "#FFFFFF", borderRadius: 20, padding: "7px 12px 7px 16px", fontSize: 12, boxShadow: "0 6px 18px rgba(0,0,0,0.2)", maxWidth: "92%" }}>
