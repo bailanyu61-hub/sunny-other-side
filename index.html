@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-14-施工单全6项">
+<meta name="version" content="2026-07-17-修bug批3-玻璃输入框+键盘加固+他点赞修正">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -427,6 +427,8 @@ return /为什么|怎么办|分析|规划|计划|方案|解释|比较|帮我想|
 }
 
 function getApiKey() { return localStorage.getItem("openrouter_key") || ""; }
+function saveReasoning(id, reasoning, thinkSec) { if (!id) return; try { if (reasoning) localStorage.setItem("rz_" + id, JSON.stringify({ r: reasoning, s: thinkSec || null })); else localStorage.removeItem("rz_" + id); } catch(e) {} }
+function loadReasoning(id) { if (!id) return null; try { const v = localStorage.getItem("rz_" + id); return v ? JSON.parse(v) : null; } catch(e) { return null; } }
 function loadTokenLog() { try { return JSON.parse(localStorage.getItem("token_log") || "[]"); } catch(e) { return []; } }
 function recordUsage(model, u) {
 if (!u) return;
@@ -981,12 +983,15 @@ let d = {}; try { d = JSON.parse(m.content) || {}; } catch(e) { d = { text: m.co
 return { id: m.id, author: m.summary || "me", created_at: m.created_at, text: d.text || "", image: d.image || "", liked: !!d.liked, comments: Array.isArray(d.comments) ? d.comments : [] };
 }
 function fmtMomentTime(ts) { try { return new Date(ts).toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }); } catch(e) { return ""; } }
-function MomentsPage({ moments, avatars, persona, onPost, onLike, onComment, onGenerate, generating }) {
+function MomentsPage({ moments, avatars, persona, onPost, onLike, onComment, onEdit, onDelete, onGenerate, generating }) {
 const [draft, setDraft] = React.useState("");
 const [img, setImg] = React.useState("");
 const fileRef = React.useRef(null);
 const [commentOn, setCommentOn] = React.useState(null);
 const [ctext, setCtext] = React.useState("");
+const [editOn, setEditOn] = React.useState(null);
+const [etext, setEtext] = React.useState("");
+const [menuOn, setMenuOn] = React.useState(null);
 const pickImg = (f) => { const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const max = 1080; let w = im.width, h = im.height; if (w > h && w > max) { h = Math.round(h * max / w); w = max; } else if (h > max) { w = Math.round(w * max / h); h = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(im, 0, 0, w, h); setImg(cv.toDataURL("image/jpeg", 0.82)); }; im.src = r.result; }; r.readAsDataURL(f); };
 return (
 <div className="page-enter" style={{ padding: "24px 20px 60px", minHeight: "100dvh" }}>
@@ -1011,8 +1016,23 @@ return (
 <div style={{ display: "flex", gap: 10 }}>
 <Avatar src={isKo ? avatars.ko : avatars.me} fallback={(isKo ? persona.name : persona.nick).slice(0, 1)} size={34} />
 <div style={{ flex: 1, minWidth: 0 }}>
+<div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
 <div style={{ fontSize: 13, color: "var(--primary)", fontWeight: 400 }}>{isKo ? persona.name : persona.nick}</div>
-{mo.text && (<div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, marginTop: 3, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>{mo.text}</div>)}
+<button className="act" onClick={() => setMenuOn(menuOn === mo.id ? null : mo.id)} style={{ color: "var(--text-faint)", fontSize: 17, lineHeight: 1, padding: "0 2px", flexShrink: 0 }}>⋯</button>
+{menuOn === mo.id && (<div className="pop" style={{ position: "absolute", top: 24, right: 0, ...cardStyle, padding: 6, display: "flex", flexDirection: "column", minWidth: 100, zIndex: 10, transformOrigin: "top right" }}>
+{mo.text ? <button className="btn" onClick={() => { setEditOn(mo.id); setEtext(mo.text); setMenuOn(null); }} style={{ ...TEXT_BTN, textAlign: "left", padding: "8px 10px", color: C.text, fontSize: 13 }}>编辑</button> : null}
+<button className="btn" onClick={() => { if (window.confirm("删除这条动态吗？")) onDelete(mo.id); setMenuOn(null); }} style={{ ...TEXT_BTN, textAlign: "left", padding: "8px 10px", color: "var(--danger)", fontSize: 13 }}>删除</button>
+</div>)}
+</div>
+{editOn === mo.id ? (
+<div style={{ marginTop: 6 }}>
+<textarea autoFocus value={etext} onChange={e => setEtext(e.target.value)} rows={3} style={{ width: "100%", background: "var(--hover)", border: "none", borderRadius: 10, padding: "8px 11px", fontSize: 14, lineHeight: 1.6, color: C.text, outline: "none", resize: "vertical", fontFamily: "inherit", boxSizing: "border-box" }} />
+<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 6 }}>
+<button className="btn" onClick={() => setEditOn(null)} style={{ ...TEXT_BTN, color: C.textMuted, fontSize: 12 }}>取消</button>
+<button className="btn" onClick={() => { if (etext.trim()) { onEdit(mo.id, etext.trim()); setEditOn(null); } }} style={{ ...BTN, padding: "5px 16px", fontSize: 12 }}>保存</button>
+</div>
+</div>
+) : (mo.text && (<div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, marginTop: 3, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>{mo.text}</div>))}
 {mo.image && (<img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, maxWidth: "100%", maxHeight: 280, borderRadius: 12, display: "block", cursor: "pointer" }} />)}
 <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
 <span style={{ fontSize: 11, color: C.textFaint }}>{fmtMomentTime(mo.created_at)}</span>
@@ -1700,6 +1720,7 @@ const abortRef = React.useRef(null);
 const streamingRef = React.useRef(false);
 const msgsRef = React.useRef(msgs);
 const paceRef = React.useRef({});
+const lastGenRef = React.useRef(null);
 React.useEffect(() => { msgsRef.current = msgs; }, [msgs]);
 React.useEffect(() => () => { Object.values(paceRef.current).forEach(t => t && clearTimeout(t)); }, []);
 const scrollRef = React.useRef(null);
@@ -1810,7 +1831,7 @@ showToast(`已收进一起听：《${song.title}》`);
 const persistPair = async (uMsg, aMsg) => {
 try {
 const { data } = await sb.from("messages").insert([{ role: "user", content: uMsg.content, type: "text" }, { role: "assistant", content: aMsg.content, type: "text" }]).select();
-if (data && data.length === 2) setMessages(prev => prev.map(m => m.localId === uMsg.localId ? { ...m, id: data[0].id } : m.localId === aMsg.localId ? { ...m, id: data[1].id } : m));
+if (data && data.length === 2) { setMessages(prev => prev.map(m => m.localId === uMsg.localId ? { ...m, id: data[0].id } : m.localId === aMsg.localId ? { ...m, id: data[1].id } : m)); const rz = lastGenRef.current; if (rz && rz.reasoning) saveReasoning(data[1].id, rz.reasoning, rz.thinkSec); }
 } catch(e) {}
 };
 
@@ -1825,6 +1846,7 @@ onReasoning: (r) => { gotReasoning = true; setMessages(prev => prev.map(m => m.l
 onDelta: (full) => setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, content: full, phase: "typing" } : m)),
 });
 const thinkSec = gotReasoning ? ((Date.now() - t0) / 1000).toFixed(1) : null;
+lastGenRef.current = { reasoning: result.reasoning || "", thinkSec };
 setMessages(prev => prev.map(m => m.localId === aiLocalId ? { ...m, content: result.content, reasoning: result.reasoning || m.reasoning, thinkSec, streaming: false, phase: null, usage: result.usage || null } : m));
 Bus.emit("pet", { mood: moodFromText(result.content), ms: 9000 });
 return result.content;
@@ -1877,7 +1899,7 @@ try {
 const lastUser = history.filter(h => h.role === "user").pop();
 const content = await runStream(history, localId, shouldThink(lastUser ? lastUser.content : ""));
 setMessages(prev => prev.map(m => m.localId === localId ? { ...m, versions: [...baseVersions, content], vi: baseVersions.length } : m));
-if (target.id) { try { await sb.from("messages").update({ content }).eq("id", target.id); } catch(e) {} }
+if (target.id) { try { await sb.from("messages").update({ content }).eq("id", target.id); } catch(e) {} const rz = lastGenRef.current; saveReasoning(target.id, rz && rz.reasoning ? rz.reasoning : "", rz ? rz.thinkSec : null); }
 } catch(e) {
 setMessages(prev => prev.map(m => m.localId === localId ? { ...m, content: baseVersions[baseVersions.length - 1], versions: baseVersions, vi: baseVersions.length - 1, streaming: false, phase: null, paced: false } : m));
 }
@@ -1944,7 +1966,7 @@ setLoading(false);
 };
 const currentStatusText = getKoStatus(memories, letter);
 return (
-<div className="page-enter" style={{ display: "flex", flexDirection: "column", height: "calc(100dvh - 74px - env(safe-area-inset-top))", position: "relative", isolation: "isolate" }}>
+<div className="page-enter" style={{ display: "flex", flexDirection: "column", height: kbUp ? "calc(var(--vvh, 100dvh) - env(safe-area-inset-top))" : "calc(100dvh - env(safe-area-inset-top) - 60px - env(safe-area-inset-bottom))", position: "relative", isolation: "isolate", transition: "height 0.12s ease-out" }}>
 {chatBg && (<div style={{ position: "absolute", inset: 0, zIndex: -1, backgroundImage: `url(${chatBg})`, backgroundSize: "cover", backgroundPosition: "center", filter: bgBlur ? `blur(${bgBlur}px)` : "none", transform: bgBlur ? "scale(1.08)" : "none" }} />)}
 {chatBg && bgDim > 0 && (<div style={{ position: "absolute", inset: 0, zIndex: -1, background: "var(--bg)", opacity: bgDim }} />)}
 <div className="themed" style={{ borderBottom: `1px solid ${C.border}`, background: C.bg }}>
@@ -1958,9 +1980,9 @@ return (
 </div>
 </div>
 {pinned && (
-<div className="themed" style={{ background: chatBg ? "transparent" : C.bg }}>
+<div style={{ background: "transparent" }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 0" }}>
-<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start", ...(chatBg ? { background: "rgba(255,255,255,0.5)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" } : {}) }}>
+<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start", background: "var(--glass-ai)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", boxShadow: "none" }}>
 <span style={{ marginTop: 2, display: "flex" }}><Icons.PinS /></span>
 <div style={{ flex: 1, minWidth: 0 }}>
 <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>今天最喜欢的一句话 · {pinned.date}</div>
@@ -1996,7 +2018,7 @@ return (
 {showTimeChip(i) && !isAiText && (<div style={{ display: "flex", justifyContent: "center", margin: "16px 0 20px" }}><div style={{ fontSize: 11, color: C.textMuted, background: "var(--hover)", padding: "3px 12px", borderRadius: 12, letterSpacing: 0.5 }}>{fmtTime(m.created_at)}</div></div>)}
 {!isAiText && (
 <React.Fragment>
-<div className="msg-row msg-appear" style={{ marginBottom: 5, display: "flex", justifyContent: "flex-end", gap: 8, alignItems: "flex-start" }}>
+<div className="msg-row msg-appear" style={{ marginBottom: 7, display: "flex", justifyContent: "flex-end", gap: 9, alignItems: "flex-start" }}>
 <div style={{ maxWidth: editingIdx === i ? "100%" : "85%", flex: editingIdx === i ? 1 : "0 1 auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
 {editingIdx === i ? (
 <div style={{ width: "100%" }}>
@@ -2008,7 +2030,7 @@ return (
 </div>
 ) : (
 <React.Fragment>
-<div onTouchStart={() => startLongPress(i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: i, role: "user", msgIdx: i }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "text", WebkitUserSelect: "text" }}>
+<div onTouchStart={() => startLongPress(i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: i, role: "user", msgIdx: i }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "text", WebkitUserSelect: "text" }}>
 {m.type === "image" && m.fileData && (<img src={m.fileData} alt="" onClick={() => openLightbox(m.fileData)} style={{ maxWidth: 128, maxHeight: 160, borderRadius: 10, display: "block", cursor: "pointer", objectFit: "cover" }} />)}
 {m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", marginTop: 6, lineHeight: 1.6 }}>{m.content}</div>)}
 {m.type === "text" && (function(){ const pq = parseQuote(m.content); return (<React.Fragment>{pq.quote && (<div style={{ borderLeft: "2px solid var(--bubble-user-text)", paddingLeft: 8, marginBottom: 5, fontSize: 12.5, lineHeight: 1.5, opacity: 0.6, maxHeight: 54, overflow: "hidden" }}>{pq.quote.length > 40 ? pq.quote.slice(0, 40) + "…" : pq.quote}</div>)}{pq.body}</React.Fragment>); })()}
@@ -2016,16 +2038,16 @@ return (
 </React.Fragment>
 )}
 </div>
-<Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={32} />
+<Avatar src={avatars.me} fallback={persona.nick.slice(0, 1)} size={38} />
 </div>
 </React.Fragment>
 )}
 {isAiText && (
 <React.Fragment>
-{(showTimeChipAi || m.reasoning) && (
-<div style={{ margin: "6px 0 2px 40px", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+{(m.created_at || m.reasoning) && (
+<div style={{ margin: "8px 0 3px 46px", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-{showTimeChipAi && <span style={{ fontSize: 10.5, color: C.textFaint, letterSpacing: 0.3 }}>{fmtTime(m.created_at)}</span>}
+{m.created_at && <span style={{ fontSize: 10.5, color: C.textFaint, letterSpacing: 0.3 }}>{fmtTime(m.created_at)}</span>}
 {m.reasoning && <button className="act" onClick={() => setExpandedThink(st => ({ ...st, [i]: !st[i] }))} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--text-faint)", background: "none", border: "none", cursor: "pointer", padding: "2px 0" }}>
 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="6" r="2.2" fill="var(--text-faint)"/><circle cx="16" cy="6" r="2.2" fill="var(--text-faint)"/><circle cx="4.5" cy="11" r="1.8" fill="var(--text-faint)"/><circle cx="19.5" cy="11" r="1.8" fill="var(--text-faint)"/><ellipse cx="12" cy="15.5" rx="5.5" ry="4.5" fill="var(--text-faint)"/></svg>
 {m.phase === "reasoning" ? "思考中…" : (m.thinkSec ? `${m.thinkSec}s` : "")} {expandedThink[i] ? "▾" : "▸"}
@@ -2038,10 +2060,10 @@ return (
 const isLastSeg = doneAll && si === visible.length - 1;
 const akey = i + "-" + si;
 return (
-<div key={akey} className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start", gap: 8, alignItems: "flex-start" }}>
-<span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0, animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={32} /></span>
+<div key={akey} className="msg-row msg-appear" style={{ marginBottom: 7, display: "flex", justifyContent: "flex-start", gap: 9, alignItems: "flex-start" }}>
+<span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0, animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={38} /></span>
 <div style={{ maxWidth: "85%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 16, padding: "7px 12px", fontSize: 14, lineHeight: 1.55, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "text", WebkitUserSelect: "text" }}>
+<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "text", WebkitUserSelect: "text" }}>
 <Md text={seg} />
 </div>
 {isLastSeg && m.usage && showToken[i] && (
@@ -2064,8 +2086,8 @@ return (
 </div>
 )}
 {pending && (
-<div className="msg-row msg-appear" style={{ marginBottom: 3, display: "flex", justifyContent: "flex-start", gap: 8, alignItems: "flex-start" }}>
-<span style={{ display: "inline-flex", flexShrink: 0 }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={32} /></span>
+<div className="msg-row msg-appear" style={{ marginBottom: 7, display: "flex", justifyContent: "flex-start", gap: 9, alignItems: "flex-start" }}>
+<span style={{ display: "inline-flex", flexShrink: 0 }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={38} /></span>
 <div style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--text-muted)", borderRadius: 18, padding: "10px 14px", fontSize: 12.5, fontStyle: "italic", fontWeight: 300 }}>
 {!m.content && m.phase === "reasoning" ? <React.Fragment>{persona.name}正在组织语言<Dots /></React.Fragment> : !m.content ? <React.Fragment>{persona.name}正在思考<Dots /></React.Fragment> : <React.Fragment>{persona.name}正在输入<Dots /></React.Fragment>}
 </div>
@@ -2114,7 +2136,7 @@ return (
 {showDown && (
 <button className="btn" onClick={() => scrollToBottom(true)} title="回到最新" style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", bottom: "calc(106px + env(safe-area-inset-bottom))", zIndex: 30, width: 36, height: 36, borderRadius: "50%", border: `1px solid ${C.border}`, background: C.cardBg, color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "var(--card-shadow)", fontSize: 15 }}>↓</button>
 )}
-<div style={{ padding: kbUp ? "8px 20px 6px" : "12px 20px calc(80px + env(safe-area-inset-bottom))", background: "transparent", transition: "padding 0.15s ease-out" }}>
+<div style={{ padding: kbUp ? "8px 20px 8px" : "10px 20px 12px", background: "transparent", transition: "padding 0.15s ease-out" }}>
 <div style={{ maxWidth: 760, margin: "0 auto", position: "relative" }}>
 {modelOpen && (
 <div className="pop" style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: 8, ...cardStyle, padding: 14, width: 252, zIndex: 20, transformOrigin: "bottom right" }}>
@@ -2156,7 +2178,7 @@ return (
 <button className="btn" style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.textFaint, fontSize: 13, cursor: "default", display: "flex", alignItems: "center", gap: 8 }}><Icons.MicS /> 语音（即将到来）</button>
 </div>
 )}
-<div style={{ display: "flex", flexDirection: "column", gap: 4, background: chatBg ? "rgba(255,255,255,0.5)" : C.cardBg, backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, boxShadow: "var(--card-shadow)", border: `1px solid ${chatBg ? "var(--glass-border)" : C.border}`, borderRadius: 22, padding: "10px 14px 8px" }}>
+<div style={{ display: "flex", flexDirection: "column", gap: 4, background: "var(--glass-ai)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "none", border: "1px solid var(--glass-border)", borderRadius: 22, padding: "10px 14px 8px" }}>
 <input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) pickImage(e.target.files[0]); e.target.value = null; }} />
 <textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ width: "100%", background: "none", border: "none", padding: "3px 2px", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6, boxSizing: "border-box" }} />
 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2521,10 +2543,19 @@ const [kbUp, setKbUp] = React.useState(false);
 React.useEffect(() => {
 const vv = window.visualViewport;
 if (!vv) return;
-const onResize = () => { setKbUp(Math.max(0, window.innerHeight - vv.height - vv.offsetTop) > 80); };
+const onResize = () => {
+const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+const open = kb > 80;
+document.documentElement.style.setProperty("--kb", open ? kb + "px" : "0px");
+document.documentElement.style.setProperty("--vvh", vv.height + "px");
+setKbUp(open);
+if (!open) { document.documentElement.style.removeProperty("--vvh"); window.scrollTo(0, 0); }
+};
+const onBlur = () => { setTimeout(() => { if (document.activeElement && (document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "INPUT")) return; document.documentElement.style.setProperty("--kb", "0px"); document.documentElement.style.removeProperty("--vvh"); setKbUp(false); window.scrollTo(0, 0); }, 80); };
 vv.addEventListener("resize", onResize);
 vv.addEventListener("scroll", onResize);
-return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); };
+window.addEventListener("focusout", onBlur);
+return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); window.removeEventListener("focusout", onBlur); };
 }, []);
 const [memories, setMemories] = React.useState([]);
 const [letter, setLetterState] = React.useState(null);
@@ -2553,8 +2584,10 @@ const setChatBg = (v) => { setChatBgState(v); try { if (v) localStorage.setItem(
 const setBgBlur = (v) => { setBgBlurState(v); try { localStorage.setItem("chat_bg_blur", String(v)); } catch(e) {} };
 const setBgDim = (v) => { setBgDimState(v); try { localStorage.setItem("chat_bg_dim", String(v)); } catch(e) {} };
 const persistMoment = async (mo) => { try { await sb.from("memories").update({ content: JSON.stringify({ text: mo.text, image: mo.image, liked: mo.liked, comments: mo.comments }) }).eq("id", mo.id); } catch(e) {} };
-const postMoment = async (text, image, author) => { const au = author || "me"; const d = { text: text || "", image: image || "", liked: false, comments: [] }; const tmpId = "mo" + Date.now(); setMoments(prev => [{ id: tmpId, author: au, created_at: new Date().toISOString(), text: d.text, image: d.image, liked: false, comments: [] }, ...prev]); try { const { data } = await sb.from("memories").insert({ summary: au, content: JSON.stringify(d), tags: ["__moment"] }).select().single(); if (data) { setMoments(prev => prev.map(x => x.id === tmpId ? { ...x, id: data.id } : x)); if (au === "me") koReactToUserPost(data.id); } else if (au === "me") koReactToUserPost(tmpId); } catch(e) { if (au === "me") koReactToUserPost(tmpId); } };
+const postMoment = async (text, image, author) => { const au = author || "me"; const d = { text: text || "", image: image || "", liked: false, comments: [] }; const tmpId = "mo" + Date.now(); setMoments(prev => [{ id: tmpId, author: au, created_at: new Date().toISOString(), text: d.text, image: d.image, liked: false, comments: [] }, ...prev]); try { const { data } = await sb.from("memories").insert({ summary: au, content: JSON.stringify(d), tags: ["__moment"] }).select().single(); if (data) { setMoments(prev => prev.map(x => x.id === tmpId ? { ...x, id: data.id } : x)); if (au === "me") koReactToUserPost(data.id, d.text); } else if (au === "me") koReactToUserPost(tmpId, d.text); } catch(e) { if (au === "me") koReactToUserPost(tmpId, d.text); } };
 const likeMoment = (id) => setMoments(prev => prev.map(m => { if (m.id !== id) return m; const nm = { ...m, liked: !m.liked }; persistMoment(nm); return nm; }));
+const editMoment = (id, text) => setMoments(prev => prev.map(m => { if (m.id !== id) return m; const nm = { ...m, text: text }; persistMoment(nm); return nm; }));
+const deleteMoment = async (id) => { setMoments(prev => prev.filter(m => m.id !== id)); try { await sb.from("memories").delete().eq("id", id); } catch(e) {} };
 const runAutoActions = async (content) => {
 try {
 const mm = (content || "").match(/<moment>([\s\S]*?)<\/moment>/);
@@ -2602,15 +2635,13 @@ localStorage.setItem("ko_last_auto_moment", String(Date.now()));
 await generateMoment();
 } catch(e) {}
 };
-const koReactToUserPost = async (userMoId) => {
+const koReactToUserPost = async (userMoId, moText) => {
 if (!toolEnabled("auto_moments")) return;
 try {
 await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
-const mo = moments.find(m => m.id === userMoId);
-if (!mo) return;
-likeMoment(userMoId);
+setMoments(prev => prev.map(m => { if (m.id !== userMoId || m.liked) return m; const nm = { ...m, liked: true }; persistMoment(nm); return nm; }));
 const p = getPersona();
-const sys = `你是${p.name}。${p.nick}刚在朋友圈发了这条动态：「${mo.text || "[图片]"}」。你现在给她评论一句，像男朋友在女朋友朋友圈下面评论那样——简短口语、宠溺或调侃，15字以内。只输出评论本身，不要引号。`;
+const sys = `你是${p.name}。${p.nick}刚在朋友圈发了这条动态：「${moText || "[图片]"}」。你现在给她评论一句，像男朋友在女朋友朋友圈下面评论那样——简短口语、宠溺或调侃，15字以内。只输出评论本身，不要引号。`;
 let text = await ChatProvider.complete([{ role: "user", content: "给她的动态评论一句。" }], sys);
 text = (text || "").trim().replace(/^[「""']+/, "").replace(/[」""']+$/, "").trim();
 if (text) commentMoment(userMoId, text, "ko");
@@ -2675,7 +2706,7 @@ const msgRes = await sb
 .order("created_at", { ascending: true });
 
 if (msgRes.error) throw msgRes.error;
-if (msgRes.data) setMessages(msgRes.data.map(m => m.file_data ? { ...m, fileData: m.file_data } : m));
+if (msgRes.data) setMessages(msgRes.data.map(m => { const base = m.file_data ? { ...m, fileData: m.file_data } : m; const rz = loadReasoning(m.id); return rz ? { ...base, reasoning: rz.r, thinkSec: rz.s } : base; }));
 const letterRes = await sb.from("letters").select("*").order("created_at", { ascending: false }).limit(1);
 if (letterRes.data && letterRes.data.length > 0) setLetter(letterRes.data[0]);
 setSyncState({ status: "ok", msg: (msgRes.data || []).length, mem: (memRes.data || []).length, error: "" });
@@ -2729,7 +2760,7 @@ case "home": return <HomePage onNav={setPage} letter={letter} memories={memories
 case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} messages={messages} onBack={() => setPage("home")} />;
 case "music": return <MusicPage songs={songs} setSongs={updateSongs} onBack={() => setPage("home")} />;
 case "worldbook": return <WorldbookPage world={world} setWorld={updateWorld} messages={messages} onBack={() => setPage("home")} />;
-case "moments": return <MomentsPage moments={moments} avatars={avatars} persona={getPersona()} onPost={postMoment} onLike={likeMoment} onComment={commentMoment} onGenerate={generateMoment} generating={genMoment} />;
+case "moments": return <MomentsPage moments={moments} avatars={avatars} persona={getPersona()} onPost={postMoment} onLike={likeMoment} onComment={commentMoment} onEdit={editMoment} onDelete={deleteMoment} onGenerate={generateMoment} generating={genMoment} />;
 case "search": return <SearchPage messages={messages} photos={photos} world={world} songs={songs} onBack={() => setPage("home")} />;
 case "shelf": return <ShelfPage memories={memories} setMemories={setMemories} onBack={() => setPage("home")} />;
 case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} messages={messages} onBack={() => setPage("home")} />;
@@ -2758,7 +2789,7 @@ default: return null;
 const wide = page === "window";
 return (
 <div className="themed" style={{ background: C.bg, minHeight: "100dvh", maxWidth: wide ? 760 : 480, margin: "0 auto", position: "relative", paddingTop: "env(safe-area-inset-top)", transition: "max-width 0.2s ease-in-out, background-color 0.2s ease-in-out" }}>
-<div style={{ paddingBottom: 75 }}>{renderPage()}</div>
+<div style={{ paddingBottom: page === "window" ? 0 : 75 }}>{renderPage()}</div>
 <DeskPet page={page} />
 <CallLayer setMessages={setMessages} />
 <Lightbox />
