@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-批5-键盘选字裁剪白底">
+<meta name="version" content="2026-07-17-批6-去框+修裁剪")>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -709,7 +709,7 @@ const out = document.createElement("canvas"); out.width = out.height = 256;
 const octx = out.getContext("2d");
 const srcX = (cxp - s.ox) / s.scale; const srcY = (cyp - s.oy) / s.scale;
 const srcW = cs / s.scale;
-octx.drawImage(img, srcX, srcY, srcW, srcW, 0, 0, 128, 128);
+octx.drawImage(img, srcX, srcY, srcW, srcW, 0, 0, 256, 256);
 onConfirm(out.toDataURL("image/jpeg", 0.85));
 };
 const zoomIn = () => { stateRef.current.scale = Math.min(5, stateRef.current.scale * 1.25); draw(); };
@@ -1982,7 +1982,7 @@ return (
 {pinned && (
 <div style={{ background: "transparent" }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 0" }}>
-<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start", background: chatBg ? "var(--glass-ai)" : "var(--surface)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: `1px solid ${chatBg ? "var(--glass-border)" : "var(--border)"}`, boxShadow: "none" }}>
+<div style={{ padding: "6px 4px", display: "flex", gap: 10, alignItems: "flex-start", background: chatBg ? "var(--glass-ai)" : "transparent", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : "none", borderRadius: chatBg ? 14 : 0, boxShadow: "none" }}>
 <span style={{ marginTop: 2, display: "flex" }}><Icons.PinS /></span>
 <div style={{ flex: 1, minWidth: 0 }}>
 <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>今天最喜欢的一句话 · {pinned.date}</div>
@@ -2180,7 +2180,7 @@ return (
 <button className="btn" style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.textFaint, fontSize: 13, cursor: "default", display: "flex", alignItems: "center", gap: 8 }}><Icons.MicS /> 语音（即将到来）</button>
 </div>
 )}
-<div style={{ display: "flex", flexDirection: "column", gap: 4, background: chatBg ? "var(--glass-ai)" : "var(--surface)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, boxShadow: "none", border: `1px solid ${chatBg ? "var(--glass-border)" : "var(--border)"}`, borderRadius: 22, padding: "10px 14px 8px" }}>
+<div style={{ display: "flex", flexDirection: "column", gap: 4, background: chatBg ? "var(--glass-ai)" : "transparent", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, boxShadow: "none", border: chatBg ? "1px solid var(--glass-border)" : "none", borderRadius: 22, padding: chatBg ? "10px 14px 8px" : "4px 6px" }}>
 <input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) pickImage(e.target.files[0]); e.target.value = null; }} />
 <textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ width: "100%", background: "none", border: "none", padding: "3px 2px", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6, boxSizing: "border-box" }} />
 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
