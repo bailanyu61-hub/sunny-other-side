@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-修bug批4-朋友圈带人设+暗号必回话">
+<meta name="version" content="2026-07-17-批5-键盘选字裁剪白底">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1982,7 +1982,7 @@ return (
 {pinned && (
 <div style={{ background: "transparent" }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "8px 20px 0" }}>
-<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start", background: "var(--glass-ai)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", border: "1px solid var(--glass-border)", boxShadow: "none" }}>
+<div style={{ ...cardStyle, padding: "9px 14px", display: "flex", gap: 10, alignItems: "flex-start", background: chatBg ? "var(--glass-ai)" : "var(--surface)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: `1px solid ${chatBg ? "var(--glass-border)" : "var(--border)"}`, boxShadow: "none" }}>
 <span style={{ marginTop: 2, display: "flex" }}><Icons.PinS /></span>
 <div style={{ flex: 1, minWidth: 0 }}>
 <div style={{ fontSize: 10, color: C.textFaint, marginBottom: 2 }}>今天最喜欢的一句话 · {pinned.date}</div>
@@ -2030,7 +2030,7 @@ return (
 </div>
 ) : (
 <React.Fragment>
-<div onTouchStart={() => startLongPress(i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: i, role: "user", msgIdx: i }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "text", WebkitUserSelect: "text" }}>
+<div onTouchStart={() => startLongPress(i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: i, role: "user", msgIdx: i }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
 {m.type === "image" && m.fileData && (<img src={m.fileData} alt="" onClick={() => openLightbox(m.fileData)} style={{ maxWidth: 128, maxHeight: 160, borderRadius: 10, display: "block", cursor: "pointer", objectFit: "cover" }} />)}
 {m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", marginTop: 6, lineHeight: 1.6 }}>{m.content}</div>)}
 {m.type === "text" && (function(){ const pq = parseQuote(m.content); return (<React.Fragment>{pq.quote && (<div style={{ borderLeft: "2px solid var(--bubble-user-text)", paddingLeft: 8, marginBottom: 5, fontSize: 12.5, lineHeight: 1.5, opacity: 0.6, maxHeight: 54, overflow: "hidden" }}>{pq.quote.length > 40 ? pq.quote.slice(0, 40) + "…" : pq.quote}</div>)}{pq.body}</React.Fragment>); })()}
@@ -2065,7 +2065,7 @@ return (
 <div key={akey} className="msg-row msg-appear" style={{ marginBottom: 7, display: "flex", justifyContent: "flex-start", gap: 9, alignItems: "flex-start" }}>
 <span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0, animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={38} /></span>
 <div style={{ maxWidth: "85%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "text", WebkitUserSelect: "text" }}>
+<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
 <Md text={seg} />
 </div>
 {isLastSeg && m.usage && showToken[i] && (
@@ -2180,7 +2180,7 @@ return (
 <button className="btn" style={{ ...TEXT_BTN, textAlign: "left", padding: "9px 10px", color: C.textFaint, fontSize: 13, cursor: "default", display: "flex", alignItems: "center", gap: 8 }}><Icons.MicS /> 语音（即将到来）</button>
 </div>
 )}
-<div style={{ display: "flex", flexDirection: "column", gap: 4, background: "var(--glass-ai)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", boxShadow: "none", border: "1px solid var(--glass-border)", borderRadius: 22, padding: "10px 14px 8px" }}>
+<div style={{ display: "flex", flexDirection: "column", gap: 4, background: chatBg ? "var(--glass-ai)" : "var(--surface)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, boxShadow: "none", border: `1px solid ${chatBg ? "var(--glass-border)" : "var(--border)"}`, borderRadius: 22, padding: "10px 14px 8px" }}>
 <input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) pickImage(e.target.files[0]); e.target.value = null; }} />
 <textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ width: "100%", background: "none", border: "none", padding: "3px 2px", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6, boxSizing: "border-box" }} />
 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -2534,7 +2534,7 @@ return cl.map((x, i2) => (
 <button className="btn" onClick={exportAll} style={{ ...BTN, fontSize: 12, padding: "7px 14px" }}>全站备份</button>
 </div>
 </div>
-{cropState && <AvatarCropper imgSrc={cropState.src} onConfirm={onCropConfirm} onCancel={() => setCropState(null)} />}
+{cropState && ReactDOM.createPortal(<AvatarCropper imgSrc={cropState.src} onConfirm={onCropConfirm} onCancel={() => setCropState(null)} />, document.body)}
 </div>
 );
 }
@@ -2549,15 +2549,12 @@ const onResize = () => {
 const kb = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
 const open = kb > 80;
 document.documentElement.style.setProperty("--kb", open ? kb + "px" : "0px");
-document.documentElement.style.setProperty("--vvh", vv.height + "px");
 setKbUp(open);
-if (!open) { document.documentElement.style.removeProperty("--vvh"); window.scrollTo(0, 0); }
 };
-const onBlur = () => { setTimeout(() => { if (document.activeElement && (document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "INPUT")) return; document.documentElement.style.setProperty("--kb", "0px"); document.documentElement.style.removeProperty("--vvh"); setKbUp(false); window.scrollTo(0, 0); }, 80); };
+const onBlur = () => { setTimeout(() => { if (document.activeElement && (document.activeElement.tagName === "TEXTAREA" || document.activeElement.tagName === "INPUT")) return; document.documentElement.style.setProperty("--kb", "0px"); setKbUp(false); }, 80); };
 vv.addEventListener("resize", onResize);
-vv.addEventListener("scroll", onResize);
 window.addEventListener("focusout", onBlur);
-return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); window.removeEventListener("focusout", onBlur); };
+return () => { vv.removeEventListener("resize", onResize); window.removeEventListener("focusout", onBlur); };
 }, []);
 const [memories, setMemories] = React.useState([]);
 const [letter, setLetterState] = React.useState(null);
