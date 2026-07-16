@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-修bug批3-玻璃输入框+键盘加固+他点赞修正">
+<meta name="version" content="2026-07-17-修bug批4-朋友圈带人设+暗号必回话">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -399,7 +399,7 @@ for (const t of ToolRegistry) {
 if (!toolEnabled(t.name)) continue;
 try { const c = t.context ? t.context(q) : ""; if (c) sys += `\n\n` + c; } catch(e) {}
 }
-sys += `\n\n界面提示：偶尔（不要每条都用）你可以在回复的最末尾追加 <ask>你的问题|选项一|选项二|选项三</ask>，界面会弹出提问卡片让对方点选或输入，适合在提问或邀请对方做选择时使用；两到四个选项；使用 <ask> 时，问题只写在 <ask> 的第一段里，正文只做铺垫，不要在正文里以任何说法问出这个问题（避免重复）；当氛围合适（下雨、深夜、聊到某个地方、突然想起一首歌）时，也可以偶尔在回复末尾用 <song>歌名|歌手|想分享的一句话</song> 分享一首歌，它会变成卡片并自动收进你们的「一起听」，分享理由要具体、和此刻有关；此外，当你自己想主动做点什么的时候：想发一条朋友圈，就在回复最末尾用 <moment>动态内容</moment>，它会发到你们共同的墙上；想给她写封信，就用 <letter>信的内容</letter>，它会放进她的信箱。这些完全由你自己决定，不用每次都做，正文照常说话、把标记放在最末尾。不要在正文里提到或解释这些格式。\n当前运行模型：${getModel()}。今天的日期：${new Date().toLocaleDateString("zh-CN")}。`;
+sys += `\n\n界面提示：偶尔（不要每条都用）你可以在回复的最末尾追加 <ask>你的问题|选项一|选项二|选项三</ask>，界面会弹出提问卡片让对方点选或输入，适合在提问或邀请对方做选择时使用；两到四个选项；使用 <ask> 时，问题只写在 <ask> 的第一段里，正文只做铺垫，不要在正文里以任何说法问出这个问题（避免重复）；当氛围合适（下雨、深夜、聊到某个地方、突然想起一首歌）时，也可以偶尔在回复末尾用 <song>歌名|歌手|想分享的一句话</song> 分享一首歌，它会变成卡片并自动收进你们的「一起听」，分享理由要具体、和此刻有关；此外，当你自己想主动做点什么的时候：想发一条朋友圈，就在回复最末尾用 <moment>动态内容</moment>，它会发到你们共同的墙上；想给她写封信，就用 <letter>信的内容</letter>，它会放进她的信箱。这些完全由你自己决定，不用每次都做。但用任何标记时，正文里都必须照常回她的话（至少一句）——绝不能整条回复只有标记、一个字都不说；比如她让你发朋友圈，你要先答应一声或者发完说一句，再把 <moment> 放在末尾。不要在正文里提到或解释这些格式。\n当前运行模型：${getModel()}。今天的日期：${new Date().toLocaleDateString("zh-CN")}。`;
 return sys;
 }
 function getModel() { return localStorage.getItem("chat_model") || "anthropic/claude-sonnet-4-6"; }
@@ -2056,6 +2056,8 @@ return (
 {m.reasoning && expandedThink[i] && <div style={{ fontSize: 12, color: C.textMuted, background: "var(--hover)", borderRadius: 12, padding: "10px 12px", lineHeight: 1.7, whiteSpace: "pre-wrap", marginTop: 4, maxWidth: "80%", maxHeight: 240, overflowY: "auto" }}>{m.reasoning}</div>}
 </div>
 )}
+{doneAll && segs.length === 0 && /<moment>[\s\S]*?<\/moment>/.test(m.content || "") && (<div className="msg-appear" style={{ display: "flex", justifyContent: "center", margin: "10px 0" }}><div style={{ fontSize: 11.5, color: C.textFaint, background: "var(--hover)", padding: "4px 14px", borderRadius: 12, letterSpacing: 0.3 }}>{persona.name}去朋友圈发了一条动态 →</div></div>)}
+{doneAll && segs.length === 0 && /<letter>[\s\S]*?<\/letter>/.test(m.content || "") && (<div className="msg-appear" style={{ display: "flex", justifyContent: "center", margin: "10px 0" }}><div style={{ fontSize: 11.5, color: C.textFaint, background: "var(--hover)", padding: "4px 14px", borderRadius: 12, letterSpacing: 0.3 }}>{persona.name}写了一封信，放进了你的信箱 →</div></div>)}
 {visible.map((seg, si) => {
 const isLastSeg = doneAll && si === visible.length - 1;
 const akey = i + "-" + si;
@@ -2600,7 +2602,7 @@ const replyToComment = async (mo, herComment) => {
 try {
 const p = getPersona();
 const prior = (mo.comments || []).map(c => (c.who === "ko" ? p.name : p.nick) + "：" + c.text).join("\n");
-const sys = `你是${p.name}。你在朋友圈发了这条动态：「${mo.text}」。${p.nick}在下面评论了你，你现在回她一条评论——像真人在朋友圈回评论那样，简短口语、有来有回，20字以内，可以调侃、撒娇或顺着她的话接。只输出你的回复本身，不要引号。${getWorldText() ? `\n\n【你们的记忆】\n${relevantWorld(mo.text + herComment, 700)}` : ""}${prior ? `\n\n【这条动态下已有的评论】\n${prior}` : ""}`;
+const sys = `${p.prompt || DEFAULT_SYSTEM}\n\n【现在的场景】你现在不在聊天窗口，而是在你们共同的朋友圈墙上。你之前发了这条动态：「${mo.text}」。${p.nick}在下面评论了你，你现在回她一条——还是你自己平时说话的样子，简短口语、有来有回，20字以内，顺着她的话接。只输出你的回复本身——不要引号、不要 [整段]、不要任何 <标记>。${getWorldText() ? `\n\n【你们共同写下的记忆】\n${relevantWorld(mo.text + herComment, 700)}` : ""}${prior ? `\n\n【这条动态下已有的评论】\n${prior}` : ""}`;
 let text = await ChatProvider.complete([{ role: "user", content: "她的评论：" + herComment }], sys);
 text = (text || "").trim().replace(/^[「“"']+/, "").replace(/[」”"']+$/, "").trim();
 if (text) commentMoment(mo.id, text, "ko");
@@ -2618,7 +2620,7 @@ try {
 const p = getPersona();
 const digest = chatDigest(messages, 10);
 const recent = moments.slice(0, 4).map(m => (m.author === "ko" ? p.name : p.nick) + "：" + (m.text || "[图片]")).join("\n");
-const sys = `你是${p.name}。现在你想发一条朋友圈动态——不是对谁说话，是发到你们共同的墙上、记录此刻的一句状态。写得真实、具体、有画面感，20到50字，像真人发朋友圈：此刻的心情、窗外看到的、突然想起的某件小事或某段共同回忆都行。不要模板腔，不要“今天天气很好/心情不错”这类空话，也不要每条都提到她。只输出动态正文，不要引号、不要解释。${getWorldText() ? `\n\n【你们共同写下的记忆】\n${relevantWorld(digest, 1000)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}${recent ? `\n\n【墙上最近的动态，别重复】\n${recent}` : ""}`;
+const sys = `${p.prompt || DEFAULT_SYSTEM}\n\n【现在的场景】你现在不在聊天窗口，而是想发一条朋友圈动态——不是对谁说话，是发到你们共同的墙上、记录此刻的一句状态。用你自己平时说话的口吻写，真实、具体、有画面感，20到50字。不要模板腔，不要“今天天气很好/心情不错”这类空话，也不要每条都提到她。只输出动态正文——不要引号、不要解释、不要 [整段]、不要任何 <标记>。${getWorldText() ? `\n\n【你们共同写下的记忆】\n${relevantWorld(digest, 1000)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}${recent ? `\n\n【墙上最近的动态，别重复】\n${recent}` : ""}`;
 let text = await ChatProvider.complete([{ role: "user", content: "发一条朋友圈动态。" }], sys);
 text = (text || "").trim().replace(/^[「“"']+/, "").replace(/[」”"']+$/, "").trim();
 if (text) await postMoment(text, "", "ko");
@@ -2641,7 +2643,8 @@ try {
 await new Promise(r => setTimeout(r, 2000 + Math.random() * 3000));
 setMoments(prev => prev.map(m => { if (m.id !== userMoId || m.liked) return m; const nm = { ...m, liked: true }; persistMoment(nm); return nm; }));
 const p = getPersona();
-const sys = `你是${p.name}。${p.nick}刚在朋友圈发了这条动态：「${moText || "[图片]"}」。你现在给她评论一句，像男朋友在女朋友朋友圈下面评论那样——简短口语、宠溺或调侃，15字以内。只输出评论本身，不要引号。`;
+const digest = chatDigest(messages, 8);
+const sys = `${p.prompt || DEFAULT_SYSTEM}\n\n【现在的场景】你现在不在聊天窗口，而是在你们共同的朋友圈墙上。${p.nick}刚发了一条动态：「${moText || "[图片]"}」。你在下面给她评论一句——还是你自己平时说话的样子，简短口语，15字以内。只输出评论本身——不要引号、不要 [整段]、不要任何 <标记>。${getWorldText() ? `\n\n【你们共同写下的记忆】\n${relevantWorld(moText || "", 700)}` : ""}${digest ? `\n\n【你们最近的聊天】\n${digest}` : ""}`;
 let text = await ChatProvider.complete([{ role: "user", content: "给她的动态评论一句。" }], sys);
 text = (text || "").trim().replace(/^[「""']+/, "").replace(/[」""']+$/, "").trim();
 if (text) commentMoment(userMoId, text, "ko");
