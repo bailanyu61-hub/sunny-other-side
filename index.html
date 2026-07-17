@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-批11-补传props"))))>
+<meta name="version" content="2026-07-17-批13-图片缩略图"))))))>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -991,7 +991,7 @@ function MomentCard({ mo, isKo, avatars, persona, onLike }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, color: "var(--primary)" }}>{isKo ? persona.name : persona.nick}</div>
           {mo.text ? <div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, marginTop: 3, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>{mo.text}</div> : null}
-          {mo.image ? <img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, maxWidth: "100%", maxHeight: 280, borderRadius: 12, display: "block", cursor: "pointer" }} /> : null}
+          {mo.image ? <img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, width: 130, height: 130, objectFit: "cover", borderRadius: 10, display: "block", cursor: "pointer" }} /> : null}
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
             <span style={{ fontSize: 11, color: C.textFaint }}>{fmtMomentTime(mo.created_at)}</span>
             <button className="act" onClick={() => onLike(mo.id)} style={{ color: mo.liked ? "var(--danger)" : "var(--text-faint)", fontSize: 15 }}>{mo.liked ? "\u2665" : "\u2661"}</button>
@@ -1002,7 +1002,9 @@ function MomentCard({ mo, isKo, avatars, persona, onLike }) {
     </div>
   );
 }
-function MomentsPage({ moments, avatars, persona, onPost, onLike, onComment, onEdit, onDelete, onGenerate, generating, momentBg, setMomentBg, sigMe, setSigMe, sigKo, setSigKo, profile, setProfile, pin, setPin }) {
+function MomentsPage({ moments, avatars, persona, onPost, onLike, onComment, onEdit, onDelete, onGenerate, generating, momentBg, setMomentBg, momentBgKo, setMomentBgKo, sigMe, setSigMe, sigKo, setSigKo, profile, setProfile, pin, setPin }) {
+const [editingSig, setEditingSig] = React.useState(false);
+const [sigDraft, setSigDraft] = React.useState("");
 const [draft, setDraft] = React.useState("");
 const [img, setImg] = React.useState("");
 const fileRef = React.useRef(null);
@@ -1019,19 +1021,34 @@ const isKo = profile === "ko";
 const who = isKo ? persona.name : persona.nick;
 const av = isKo ? avatars.ko : avatars.me;
 const sig = isKo ? sigKo : sigMe;
+const bg = isKo ? momentBgKo : momentBg;
+const setBg = isKo ? setMomentBgKo : setMomentBg;
+const setSig = isKo ? setSigKo : setSigMe;
 const mine = moments.filter(m => m.author === profile);
 const pinned = mine.find(m => m.id === pin);
 const rest = mine.filter(m => m.id !== pin);
+const profBgRef = { current: null };
 return (
 <div className="page-enter" style={{ minHeight: "100dvh", paddingBottom: 60 }}>
-<div style={{ position: "relative", height: 200, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", overflow: "visible" }}>
-<button className="act" onClick={() => setProfile(null)} style={{ position: "absolute", top: "12px", left: 14, color: "#fff", fontSize: 24, textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>‹</button>
-<div style={{ position: "absolute", right: 18, bottom: -30, zIndex: 5, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-<span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 6 }}>{who}</span>
+<div style={{ position: "relative", height: 200, background: bg ? ("url(" + bg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", overflow: "visible" }}>
+<button className="act" onClick={() => setProfile(null)} style={{ position: "absolute", top: 12, left: 14, color: "#fff", fontSize: 24, textShadow: "0 1px 4px rgba(0,0,0,0.4)", zIndex: 6 }}>‹</button>
+<input ref={el => profBgRef.current = el} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files && e.target.files[0]) { const f = e.target.files[0]; const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const max = 1280; let w = im.width, h = im.height; if (w > max) { h = Math.round(h*max/w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(im,0,0,w,h); setBg(cv.toDataURL("image/jpeg",0.82)); }; im.src = r.result; }; r.readAsDataURL(f); } e.target.value=null; }} />
+<button className="act" onClick={() => profBgRef.current && profBgRef.current.click()} style={{ position: "absolute", top: 12, right: 14, color: "#fff", fontSize: 12.5, background: "rgba(0,0,0,0.28)", borderRadius: 12, padding: "5px 12px", backdropFilter: "blur(4px)", zIndex: 6 }}>换封面</button>
+<div style={{ position: "absolute", right: 18, bottom: -30, zIndex: 5, display: "flex", alignItems: "flex-end", gap: 10 }}>
+<span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 8 }}>{who}</span>
 <Avatar src={av} fallback={who.slice(0,1)} size={64} />
 </div>
 </div>
-<div style={{ padding: "42px 20px 0", textAlign: "right", fontSize: 12.5, color: C.textMuted, fontStyle: "italic" }}>{sig || "——"}</div>
+<div style={{ padding: "42px 20px 0", textAlign: "right" }}>
+{editingSig ? (
+<div style={{ display: "flex", gap: 8, alignItems: "center", justifyContent: "flex-end" }}>
+<input autoFocus value={sigDraft} onChange={e => setSigDraft(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { setSig(sigDraft); setEditingSig(false); } }} placeholder="写一句签名……" style={{ background: "var(--hover)", border: "none", borderRadius: 10, padding: "6px 12px", fontSize: 12.5, color: C.text, fontFamily: "inherit", outline: "none", textAlign: "right", minWidth: 160 }} />
+<button className="btn" onClick={() => { setSig(sigDraft); setEditingSig(false); }} style={{ background: "none", border: "none", color: "var(--primary)", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>存</button>
+</div>
+) : (
+<div onClick={() => { setSigDraft(sig || ""); setEditingSig(true); }} style={{ fontSize: 12.5, color: C.textMuted, fontStyle: "italic", cursor: "pointer" }}>{sig || "点击写签名…"} <span style={{ fontStyle: "normal", fontSize: 11, color: "var(--primary)" }}>✎</span></div>
+)}
+</div>
 <div style={{ padding: "22px 20px 0" }}>
 {pinned ? (<div style={{ marginBottom: 18 }}><div style={{ fontSize: 11, color: "var(--primary)", marginBottom: 6, letterSpacing: 1 }}>置顶</div><MomentCard mo={pinned} isKo={isKo} avatars={avatars} persona={persona} onLike={onLike} /></div>) : null}
 {rest.length === 0 && !pinned ? (<div style={{ textAlign: "center", paddingTop: 30, fontSize: 13, color: C.textFaint, fontStyle: "italic" }}>还没有动态。</div>) : null}
@@ -1043,8 +1060,6 @@ return (
 return (
 <div className="page-enter" style={{ minHeight: "100dvh", paddingBottom: 60 }}>
 <div style={{ position: "relative", height: 210, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", marginBottom: 44, overflow: "visible" }}>
-<input ref={bgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files && e.target.files[0]) pickBg(e.target.files[0]); e.target.value=null; }} />
-<button className="act" onClick={() => bgRef.current && bgRef.current.click()} style={{ position: "absolute", top: 12, right: 14, color: "#fff", fontSize: 12.5, background: "rgba(0,0,0,0.28)", borderRadius: 12, padding: "5px 12px", backdropFilter: "blur(4px)" }}>换封面</button>
 <div onClick={() => setProfile("me")} style={{ position: "absolute", right: 18, bottom: -30, zIndex: 5, display: "flex", alignItems: "flex-end", gap: 10, cursor: "pointer" }}>
 <span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 8 }}>{persona.nick}</span>
 <Avatar src={avatars.me} fallback={persona.nick.slice(0,1)} size={60} />
@@ -1088,7 +1103,7 @@ return (
 </div>
 </div>
 ) : (mo.text && (<div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, marginTop: 3, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>{mo.text}</div>))}
-{mo.image && (<img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, maxWidth: "100%", maxHeight: 280, borderRadius: 12, display: "block", cursor: "pointer" }} />)}
+{mo.image && (<img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, width: 130, height: 130, objectFit: "cover", borderRadius: 10, display: "block", cursor: "pointer" }} />)}
 <div style={{ display: "flex", alignItems: "center", gap: 18, marginTop: 10 }}>
 <span style={{ fontSize: 11, color: C.textFaint }}>{fmtMomentTime(mo.created_at)}</span>
 <button className="act" onClick={() => onLike(mo.id)} style={{ display: "flex", alignItems: "center", color: mo.liked ? "var(--danger)" : "var(--text-faint)", fontSize: 15 }}>{mo.liked ? "♥" : "♡"}</button>
@@ -2647,7 +2662,9 @@ const [syncState, setSyncState] = React.useState({ status: "loading", msg: 0, me
 const [reloadKey, setReloadKey] = React.useState(0);
 const [moments, setMoments] = React.useState([]);
 const [momentBg, setMomentBgState] = React.useState(() => { try { return localStorage.getItem("moment_bg") || ""; } catch(e){ return ""; } });
-const setMomentBg = (v) => { setMomentBgState(v); try { if (v) { localStorage.setItem("moment_bg", v); } else { localStorage.removeItem("moment_bg"); } } catch(e){ console.warn("背景图太大,本次生效但刷新后不保留"); } };
+const setMomentBg = (v) => { setMomentBgState(v); try { if (v) { localStorage.setItem("moment_bg", v); } else { localStorage.removeItem("moment_bg"); } } catch(e){ console.warn("bg too large"); } };
+const [momentBgKo, setMomentBgKoState] = React.useState(() => { try { return localStorage.getItem("moment_bg_ko") || ""; } catch(e){ return ""; } });
+const setMomentBgKo = (v) => { setMomentBgKoState(v); try { if (v) { localStorage.setItem("moment_bg_ko", v); } else { localStorage.removeItem("moment_bg_ko"); } } catch(e){ console.warn("bg too large"); } };
 const [sigMe, setSigMeState] = React.useState(() => { try { return localStorage.getItem("sig_me") || "这一刻的想法……"; } catch(e){ return ""; } });
 const setSigMe = (v) => { setSigMeState(v); try { localStorage.setItem("sig_me", v); } catch(e){} };
 const [sigKo, setSigKoState] = React.useState(() => { try { return localStorage.getItem("sig_ko") || "晴天的另一边。"; } catch(e){ return ""; } });
@@ -2841,7 +2858,7 @@ case "home": return <HomePage onNav={setPage} letter={letter} memories={memories
 case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} messages={messages} onBack={() => setPage("home")} />;
 case "music": return <MusicPage songs={songs} setSongs={updateSongs} onBack={() => setPage("home")} />;
 case "worldbook": return <WorldbookPage world={world} setWorld={updateWorld} messages={messages} onBack={() => setPage("home")} />;
-case "moments": return <MomentsPage moments={moments} avatars={avatars} persona={getPersona()} onPost={postMoment} onLike={likeMoment} onComment={commentMoment} onEdit={editMoment} onDelete={deleteMoment} onGenerate={generateMoment} generating={genMoment} momentBg={momentBg} setMomentBg={setMomentBg} sigMe={sigMe} setSigMe={setSigMe} sigKo={sigKo} setSigKo={setSigKo} profile={momentProfile} setProfile={setMomentProfile} pin={momentPin} setPin={setMomentPin} />;
+case "moments": return <MomentsPage moments={moments} avatars={avatars} persona={getPersona()} onPost={postMoment} onLike={likeMoment} onComment={commentMoment} onEdit={editMoment} onDelete={deleteMoment} onGenerate={generateMoment} generating={genMoment} momentBg={momentBg} setMomentBg={setMomentBg} momentBgKo={momentBgKo} setMomentBgKo={setMomentBgKo} sigMe={sigMe} setSigMe={setSigMe} sigKo={sigKo} setSigKo={setSigKo} profile={momentProfile} setProfile={setMomentProfile} pin={momentPin} setPin={setMomentPin} />;
 case "search": return <SearchPage messages={messages} photos={photos} world={world} songs={songs} onBack={() => setPage("home")} />;
 case "shelf": return <ShelfPage memories={memories} setMemories={setMemories} onBack={() => setPage("home")} />;
 case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} messages={messages} onBack={() => setPage("home")} />;
