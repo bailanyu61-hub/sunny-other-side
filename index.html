@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-批10-修主页头像背景")))>
+<meta name="version" content="2026-07-17-批11-补传props"))))>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -2841,7 +2841,7 @@ case "home": return <HomePage onNav={setPage} letter={letter} memories={memories
 case "mailbox": return <MailboxPage letter={letter} setLetter={setLetter} messages={messages} onBack={() => setPage("home")} />;
 case "music": return <MusicPage songs={songs} setSongs={updateSongs} onBack={() => setPage("home")} />;
 case "worldbook": return <WorldbookPage world={world} setWorld={updateWorld} messages={messages} onBack={() => setPage("home")} />;
-case "moments": return <MomentsPage moments={moments} avatars={avatars} persona={getPersona()} onPost={postMoment} onLike={likeMoment} onComment={commentMoment} onEdit={editMoment} onDelete={deleteMoment} onGenerate={generateMoment} generating={genMoment} />;
+case "moments": return <MomentsPage moments={moments} avatars={avatars} persona={getPersona()} onPost={postMoment} onLike={likeMoment} onComment={commentMoment} onEdit={editMoment} onDelete={deleteMoment} onGenerate={generateMoment} generating={genMoment} momentBg={momentBg} setMomentBg={setMomentBg} sigMe={sigMe} setSigMe={setSigMe} sigKo={sigKo} setSigKo={setSigKo} profile={momentProfile} setProfile={setMomentProfile} pin={momentPin} setPin={setMomentPin} />;
 case "search": return <SearchPage messages={messages} photos={photos} world={world} songs={songs} onBack={() => setPage("home")} />;
 case "shelf": return <ShelfPage memories={memories} setMemories={setMemories} onBack={() => setPage("home")} />;
 case "gallery": return <GalleryPage photos={photos} setPhotos={setPhotos} messages={messages} onBack={() => setPage("home")} />;
