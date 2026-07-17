@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-批9-朋友圈主页改造"))>
+<meta name="version" content="2026-07-17-批10-修主页头像背景")))>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1024,9 +1024,9 @@ const pinned = mine.find(m => m.id === pin);
 const rest = mine.filter(m => m.id !== pin);
 return (
 <div className="page-enter" style={{ minHeight: "100dvh", paddingBottom: 60 }}>
-<div style={{ position: "relative", height: 200, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))" }}>
+<div style={{ position: "relative", height: 200, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", overflow: "visible" }}>
 <button className="act" onClick={() => setProfile(null)} style={{ position: "absolute", top: "12px", left: 14, color: "#fff", fontSize: 24, textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>‹</button>
-<div style={{ position: "absolute", right: 18, bottom: -30, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+<div style={{ position: "absolute", right: 18, bottom: -30, zIndex: 5, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
 <span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 6 }}>{who}</span>
 <Avatar src={av} fallback={who.slice(0,1)} size={64} />
 </div>
@@ -1042,10 +1042,10 @@ return (
 }
 return (
 <div className="page-enter" style={{ minHeight: "100dvh", paddingBottom: 60 }}>
-<div style={{ position: "relative", height: 210, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", marginBottom: 44 }}>
+<div style={{ position: "relative", height: 210, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", marginBottom: 44, overflow: "visible" }}>
 <input ref={bgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files && e.target.files[0]) pickBg(e.target.files[0]); e.target.value=null; }} />
 <button className="act" onClick={() => bgRef.current && bgRef.current.click()} style={{ position: "absolute", top: 12, right: 14, color: "#fff", fontSize: 12.5, background: "rgba(0,0,0,0.28)", borderRadius: 12, padding: "5px 12px", backdropFilter: "blur(4px)" }}>换封面</button>
-<div onClick={() => setProfile("me")} style={{ position: "absolute", right: 18, bottom: -30, display: "flex", alignItems: "flex-end", gap: 10, cursor: "pointer" }}>
+<div onClick={() => setProfile("me")} style={{ position: "absolute", right: 18, bottom: -30, zIndex: 5, display: "flex", alignItems: "flex-end", gap: 10, cursor: "pointer" }}>
 <span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 8 }}>{persona.nick}</span>
 <Avatar src={avatars.me} fallback={persona.nick.slice(0,1)} size={60} />
 </div>
@@ -2647,7 +2647,7 @@ const [syncState, setSyncState] = React.useState({ status: "loading", msg: 0, me
 const [reloadKey, setReloadKey] = React.useState(0);
 const [moments, setMoments] = React.useState([]);
 const [momentBg, setMomentBgState] = React.useState(() => { try { return localStorage.getItem("moment_bg") || ""; } catch(e){ return ""; } });
-const setMomentBg = (v) => { setMomentBgState(v); try { v ? localStorage.setItem("moment_bg", v) : localStorage.removeItem("moment_bg"); } catch(e){} };
+const setMomentBg = (v) => { setMomentBgState(v); try { if (v) { localStorage.setItem("moment_bg", v); } else { localStorage.removeItem("moment_bg"); } } catch(e){ console.warn("背景图太大,本次生效但刷新后不保留"); } };
 const [sigMe, setSigMeState] = React.useState(() => { try { return localStorage.getItem("sig_me") || "这一刻的想法……"; } catch(e){ return ""; } });
 const setSigMe = (v) => { setSigMeState(v); try { localStorage.setItem("sig_me", v); } catch(e){} };
 const [sigKo, setSigKoState] = React.useState(() => { try { return localStorage.getItem("sig_ko") || "晴天的另一边。"; } catch(e){ return ""; } });
