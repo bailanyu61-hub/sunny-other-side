@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-批7-悬浮输入框"))>
+<meta name="version" content="2026-07-17-批9-朋友圈主页改造"))>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -983,7 +983,26 @@ let d = {}; try { d = JSON.parse(m.content) || {}; } catch(e) { d = { text: m.co
 return { id: m.id, author: m.summary || "me", created_at: m.created_at, text: d.text || "", image: d.image || "", liked: !!d.liked, comments: Array.isArray(d.comments) ? d.comments : [] };
 }
 function fmtMomentTime(ts) { try { return new Date(ts).toLocaleString("zh-CN", { month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }); } catch(e) { return ""; } }
-function MomentsPage({ moments, avatars, persona, onPost, onLike, onComment, onEdit, onDelete, onGenerate, generating }) {
+function MomentCard({ mo, isKo, avatars, persona, onLike }) {
+  return (
+    <div style={{ ...cardStyle, padding: 14 }}>
+      <div style={{ display: "flex", gap: 10 }}>
+        <Avatar src={isKo ? avatars.ko : avatars.me} fallback={(isKo ? persona.name : persona.nick).slice(0,1)} size={34} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, color: "var(--primary)" }}>{isKo ? persona.name : persona.nick}</div>
+          {mo.text ? <div style={{ fontSize: 14, color: C.text, lineHeight: 1.6, marginTop: 3, whiteSpace: "pre-wrap", overflowWrap: "break-word" }}>{mo.text}</div> : null}
+          {mo.image ? <img src={mo.image} onClick={() => openLightbox(mo.image)} style={{ marginTop: 8, maxWidth: "100%", maxHeight: 280, borderRadius: 12, display: "block", cursor: "pointer" }} /> : null}
+          <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
+            <span style={{ fontSize: 11, color: C.textFaint }}>{fmtMomentTime(mo.created_at)}</span>
+            <button className="act" onClick={() => onLike(mo.id)} style={{ color: mo.liked ? "var(--danger)" : "var(--text-faint)", fontSize: 15 }}>{mo.liked ? "\u2665" : "\u2661"}</button>
+          </div>
+          {mo.comments && mo.comments.length > 0 ? (<div style={{ marginTop: 10, background: "var(--hover)", borderRadius: 10, padding: "8px 11px" }}>{mo.comments.map((c,ci)=>(<div key={ci} style={{ fontSize: 12.5, color: C.text, lineHeight: 1.75 }}><span style={{ color: "var(--primary)" }}>{c.who === "ko" ? persona.name : persona.nick}</span>：{c.text}</div>))}</div>) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+function MomentsPage({ moments, avatars, persona, onPost, onLike, onComment, onEdit, onDelete, onGenerate, generating, momentBg, setMomentBg, sigMe, setSigMe, sigKo, setSigKo, profile, setProfile, pin, setPin }) {
 const [draft, setDraft] = React.useState("");
 const [img, setImg] = React.useState("");
 const fileRef = React.useRef(null);
@@ -993,12 +1012,48 @@ const [editOn, setEditOn] = React.useState(null);
 const [etext, setEtext] = React.useState("");
 const [menuOn, setMenuOn] = React.useState(null);
 const pickImg = (f) => { const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const max = 1080; let w = im.width, h = im.height; if (w > h && w > max) { h = Math.round(h * max / w); w = max; } else if (h > max) { w = Math.round(w * max / h); h = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(im, 0, 0, w, h); setImg(cv.toDataURL("image/jpeg", 0.82)); }; im.src = r.result; }; r.readAsDataURL(f); };
+const bgRef = React.useRef(null);
+const pickBg = (f) => { const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { const max = 1280; let w = im.width, h = im.height; if (w > max) { h = Math.round(h*max/w); w = max; } const cv = document.createElement("canvas"); cv.width = w; cv.height = h; cv.getContext("2d").drawImage(im,0,0,w,h); setMomentBg(cv.toDataURL("image/jpeg",0.82)); }; im.src = r.result; }; r.readAsDataURL(f); };
+if (profile) {
+const isKo = profile === "ko";
+const who = isKo ? persona.name : persona.nick;
+const av = isKo ? avatars.ko : avatars.me;
+const sig = isKo ? sigKo : sigMe;
+const mine = moments.filter(m => m.author === profile);
+const pinned = mine.find(m => m.id === pin);
+const rest = mine.filter(m => m.id !== pin);
 return (
-<div className="page-enter" style={{ padding: "24px 20px 60px", minHeight: "100dvh" }}>
-<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-<div style={{ fontSize: 15, color: C.text, fontWeight: 400, letterSpacing: 1 }}>朋友圈</div>
+<div className="page-enter" style={{ minHeight: "100dvh", paddingBottom: 60 }}>
+<div style={{ position: "relative", height: 200, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))" }}>
+<button className="act" onClick={() => setProfile(null)} style={{ position: "absolute", top: "12px", left: 14, color: "#fff", fontSize: 24, textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>‹</button>
+<div style={{ position: "absolute", right: 18, bottom: -30, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+<span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 6 }}>{who}</span>
+<Avatar src={av} fallback={who.slice(0,1)} size={64} />
+</div>
+</div>
+<div style={{ padding: "42px 20px 0", textAlign: "right", fontSize: 12.5, color: C.textMuted, fontStyle: "italic" }}>{sig || "——"}</div>
+<div style={{ padding: "22px 20px 0" }}>
+{pinned ? (<div style={{ marginBottom: 18 }}><div style={{ fontSize: 11, color: "var(--primary)", marginBottom: 6, letterSpacing: 1 }}>置顶</div><MomentCard mo={pinned} isKo={isKo} avatars={avatars} persona={persona} onLike={onLike} /></div>) : null}
+{rest.length === 0 && !pinned ? (<div style={{ textAlign: "center", paddingTop: 30, fontSize: 13, color: C.textFaint, fontStyle: "italic" }}>还没有动态。</div>) : null}
+{rest.map(mo => (<div key={mo.id} style={{ marginBottom: 14 }}><MomentCard mo={mo} isKo={isKo} avatars={avatars} persona={persona} onLike={onLike} /></div>))}
+</div>
+</div>
+);
+}
+return (
+<div className="page-enter" style={{ minHeight: "100dvh", paddingBottom: 60 }}>
+<div style={{ position: "relative", height: 210, background: momentBg ? ("url(" + momentBg + ") center/cover") : "linear-gradient(135deg, var(--primary-soft), var(--card-bg))", marginBottom: 44 }}>
+<input ref={bgRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => { if (e.target.files && e.target.files[0]) pickBg(e.target.files[0]); e.target.value=null; }} />
+<button className="act" onClick={() => bgRef.current && bgRef.current.click()} style={{ position: "absolute", top: 12, right: 14, color: "#fff", fontSize: 12.5, background: "rgba(0,0,0,0.28)", borderRadius: 12, padding: "5px 12px", backdropFilter: "blur(4px)" }}>换封面</button>
+<div onClick={() => setProfile("me")} style={{ position: "absolute", right: 18, bottom: -30, display: "flex", alignItems: "flex-end", gap: 10, cursor: "pointer" }}>
+<span style={{ color: "#fff", fontSize: 15, fontWeight: 500, textShadow: "0 1px 4px rgba(0,0,0,0.5)", marginBottom: 8 }}>{persona.nick}</span>
+<Avatar src={avatars.me} fallback={persona.nick.slice(0,1)} size={60} />
+</div>
+</div>
+<div style={{ padding: "0 20px", display: "flex", justifyContent: "flex-end", marginBottom: 14 }}>
 <button className="btn" onClick={onGenerate} disabled={generating} style={{ background: "var(--primary-soft)", color: "var(--primary)", border: "none", borderRadius: 14, padding: "6px 14px", fontSize: 12, cursor: generating ? "default" : "pointer", fontFamily: "inherit", opacity: generating ? 0.55 : 1 }}>{generating ? "他在写…" : "让他发一条"}</button>
 </div>
+<div style={{ padding: "0 20px" }}>
 <div style={{ ...cardStyle, padding: 14, marginBottom: 20 }}>
 <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={2} placeholder="说点什么，贴在你们的墙上……" style={{ width: "100%", background: "none", border: "none", outline: "none", resize: "none", fontSize: 14, color: C.text, fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" }} />
 {img && (<div style={{ position: "relative", display: "inline-block", marginTop: 8 }}><img src={img} style={{ width: 82, height: 82, objectFit: "cover", borderRadius: 10, display: "block" }} /><button className="act" onClick={() => setImg("")} style={{ position: "absolute", top: -8, right: -8, background: "var(--card-bg)", borderRadius: "50%" }}>✕</button></div>)}
@@ -1014,7 +1069,7 @@ const isKo = mo.author === "ko";
 return (
 <div key={mo.id} style={{ ...cardStyle, padding: 14, marginBottom: 14 }}>
 <div style={{ display: "flex", gap: 10 }}>
-<Avatar src={isKo ? avatars.ko : avatars.me} fallback={(isKo ? persona.name : persona.nick).slice(0, 1)} size={34} />
+<span onClick={() => setProfile(isKo ? "ko" : "me")} style={{ cursor: "pointer" }}><Avatar src={isKo ? avatars.ko : avatars.me} fallback={(isKo ? persona.name : persona.nick).slice(0, 1)} size={34} /></span>
 <div style={{ flex: 1, minWidth: 0 }}>
 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", position: "relative" }}>
 <div style={{ fontSize: 13, color: "var(--primary)", fontWeight: 400 }}>{isKo ? persona.name : persona.nick}</div>
@@ -1046,6 +1101,7 @@ return (
 </div>
 );
 })}
+</div>
 </div>
 );
 }
@@ -1704,8 +1760,14 @@ const applyThink = (v) => { try { localStorage.setItem("think_mode", v); } catch
 const [activeActions, setActiveActions] = React.useState(null);
 const [longPressMenu, setLongPressMenu] = React.useState(null);
 const longPressTimer = React.useRef(null);
-const startLongPress = (key, role, msgIdx, seg, isLastSeg) => {
-longPressTimer.current = setTimeout(() => { setLongPressMenu({ key, role, msgIdx, seg, isLastSeg }); }, 500);
+const startLongPress = (e, key, role, msgIdx, seg, isLastSeg) => {
+const el = e && e.currentTarget;
+const rect = el && el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+longPressTimer.current = setTimeout(() => {
+if (navigator.vibrate) { try { navigator.vibrate(12); } catch(_){} }
+const r = rect ? { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, cx: (rect.left+rect.right)/2 } : null;
+setLongPressMenu({ key, role, msgIdx, seg, isLastSeg, rect: r });
+}, 480);
 };
 const cancelLongPress = () => { if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; } };
 const [expandedThink, setExpandedThink] = React.useState({});
@@ -2030,7 +2092,7 @@ return (
 </div>
 ) : (
 <React.Fragment>
-<div onTouchStart={() => startLongPress(i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: i, role: "user", msgIdx: i }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
+<div onTouchStart={(e) => startLongPress(e, i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); const r=e.currentTarget.getBoundingClientRect(); setLongPressMenu({ key: i, role: "user", msgIdx: i, rect:{top:r.top,bottom:r.bottom,left:r.left,right:r.right,cx:(r.left+r.right)/2} }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
 {m.type === "image" && m.fileData && (<img src={m.fileData} alt="" onClick={() => openLightbox(m.fileData)} style={{ maxWidth: 128, maxHeight: 160, borderRadius: 10, display: "block", cursor: "pointer", objectFit: "cover" }} />)}
 {m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", marginTop: 6, lineHeight: 1.6 }}>{m.content}</div>)}
 {m.type === "text" && (function(){ const pq = parseQuote(m.content); return (<React.Fragment>{pq.quote && (<div style={{ borderLeft: "2px solid var(--bubble-user-text)", paddingLeft: 8, marginBottom: 5, fontSize: 12.5, lineHeight: 1.5, opacity: 0.6, maxHeight: 54, overflow: "hidden" }}>{pq.quote.length > 40 ? pq.quote.slice(0, 40) + "…" : pq.quote}</div>)}{pq.body}</React.Fragment>); })()}
@@ -2065,7 +2127,7 @@ return (
 <div key={akey} className="msg-row msg-appear" style={{ marginBottom: 7, display: "flex", justifyContent: "flex-start", gap: 9, alignItems: "flex-start" }}>
 <span onClick={onKoAvatarTap} title="戳戳他" style={{ cursor: "pointer", display: "inline-flex", flexShrink: 0, animation: pokeShake ? "pokeShake 0.55s ease" : "none", WebkitTapHighlightColor: "transparent" }}><Avatar src={avatars.ko} fallback={persona.name.slice(0, 1)} size={38} /></span>
 <div style={{ maxWidth: "85%", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={() => startLongPress(akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
+<div onClick={() => { if (isLastSeg && m.usage) setShowToken(st => ({ ...st, [i]: !st[i] })); }} onTouchStart={(e) => startLongPress(e, akey, "ai", i, seg, isLastSeg)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); const r=e.currentTarget.getBoundingClientRect(); setLongPressMenu({ key: akey, role: "ai", msgIdx: i, seg, isLastSeg, rect:{top:r.top,bottom:r.bottom,left:r.left,right:r.right,cx:(r.left+r.right)/2} }); }} style={{ background: chatBg ? "var(--glass-ai)" : "var(--bubble-ai-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, border: chatBg ? "1px solid var(--glass-border)" : undefined, color: "var(--bubble-ai-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none" }}>
 <Md text={seg} />
 </div>
 {isLastSeg && m.usage && showToken[i] && (
@@ -2196,31 +2258,41 @@ return (
 </div>
 </div>
 </div>
-{longPressMenu && (
-<div className="fadebg" onClick={() => setLongPressMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.25)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-<div className="sheet" onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: C.cardBg, borderRadius: "18px 18px 0 0", padding: "14px 8px calc(env(safe-area-inset-bottom) + 14px)", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-<div style={{ width: 36, height: 4, borderRadius: 2, background: C.border, margin: "0 auto 12px" }} />
-{longPressMenu.role === "user" && (
-<React.Fragment>
-<button className="btn" onClick={() => { copyText(msgs[longPressMenu.msgIdx]?.content); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>复制</button>
-<button className="btn" onClick={() => { setQuoting(parseQuote(msgs[longPressMenu.msgIdx]?.content).body); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>引用</button>
-<button className="btn" onClick={() => { setEditingIdx(longPressMenu.msgIdx); setEditText(msgs[longPressMenu.msgIdx]?.content); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>编辑</button>
-<button className="btn" onClick={() => { deleteMsg(longPressMenu.msgIdx); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: "var(--danger)", cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>删除</button>
-</React.Fragment>
-)}
-{longPressMenu.role === "ai" && (
-<React.Fragment>
-<button className="btn" onClick={() => { copyText(longPressMenu.seg); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>复制</button>
-<button className="btn" onClick={() => { setQuoting(longPressMenu.seg); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>引用</button>
-<button className="btn" onClick={() => { setPin(longPressMenu.seg); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>固定这句话</button>
-{longPressMenu.isLastSeg && <button className="btn" onClick={() => { regenerate(longPressMenu.msgIdx); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.text, cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>重新生成</button>}
-{longPressMenu.isLastSeg && <button className="btn" onClick={() => { deleteMsg(longPressMenu.msgIdx); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: "var(--danger)", cursor: "pointer", fontFamily: "inherit", borderRadius: 10 }}>删除整条回复</button>}
-</React.Fragment>
-)}
-<button className="btn" onClick={() => setLongPressMenu(null)} style={{ width: "100%", textAlign: "center", background: "none", border: "none", padding: "12px 16px", fontSize: 14, color: C.textMuted, cursor: "pointer", fontFamily: "inherit", borderRadius: 10, marginTop: 4 }}>取消</button>
+{longPressMenu && (() => {
+const r = longPressMenu.rect;
+const vh = (typeof window !== "undefined" ? window.innerHeight : 800);
+const vw = (typeof window !== "undefined" ? window.innerWidth : 400);
+const below = r ? (vh - r.bottom) > 240 || r.top < 200 : true;
+const menuW = 180;
+let left = r ? Math.min(Math.max(r.cx - menuW/2, 12), vw - menuW - 12) : (vw-menuW)/2;
+const top = r ? (below ? r.bottom + 8 : undefined) : vh*0.4;
+const bottom = r ? (below ? undefined : (vh - r.top + 8)) : undefined;
+return (
+<div className="fadebg" onClick={() => setLongPressMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.32)", backdropFilter: "blur(2px)", WebkitBackdropFilter: "blur(2px)" }}>
+<div className="pop" onClick={e => e.stopPropagation()} style={{ position: "absolute", left: left, top: top, bottom: bottom, width: menuW, background: C.cardBg, borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.22)", border: `1px solid ${C.border}`, transformOrigin: below ? "top center" : "bottom center" }}>
+{(() => {
+const lm = longPressMenu;
+const items = [];
+if (lm.role === "user") {
+items.push(["复制", () => copyText(msgs[lm.msgIdx]?.content), false]);
+items.push(["引用", () => setQuoting(parseQuote(msgs[lm.msgIdx]?.content).body), false]);
+items.push(["编辑", () => { setEditingIdx(lm.msgIdx); setEditText(msgs[lm.msgIdx]?.content); }, false]);
+items.push(["删除", () => deleteMsg(lm.msgIdx), true]);
+} else {
+items.push(["复制", () => copyText(lm.seg), false]);
+items.push(["引用", () => setQuoting(lm.seg), false]);
+items.push(["固定这句话", () => setPin(lm.seg), false]);
+if (lm.isLastSeg) items.push(["重新生成", () => regenerate(lm.msgIdx), false]);
+if (lm.isLastSeg) items.push(["删除整条回复", () => deleteMsg(lm.msgIdx), true]);
+}
+return items.map(([label, fn, danger], idx) => (
+<button key={idx} className="btn" onClick={() => { fn(); setLongPressMenu(null); }} style={{ width: "100%", textAlign: "left", background: "none", border: "none", borderBottom: idx < items.length-1 ? "1px solid var(--border)" : "none", padding: "11px 18px", fontSize: 14.5, color: danger ? "var(--danger)" : C.text, cursor: "pointer", fontFamily: "inherit", display: "flex", justifyContent: "space-between", alignItems: "center" }}>{label}</button>
+));
+})()}
 </div>
 </div>
-)}
+);
+})()}
 <style>{`@keyframes bop{0%,60%,100%{opacity:0.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}`}</style>
 </div>
 );
@@ -2574,6 +2646,15 @@ const [menuOpen, setMenuOpen] = React.useState(false);
 const [syncState, setSyncState] = React.useState({ status: "loading", msg: 0, mem: 0, error: "" });
 const [reloadKey, setReloadKey] = React.useState(0);
 const [moments, setMoments] = React.useState([]);
+const [momentBg, setMomentBgState] = React.useState(() => { try { return localStorage.getItem("moment_bg") || ""; } catch(e){ return ""; } });
+const setMomentBg = (v) => { setMomentBgState(v); try { v ? localStorage.setItem("moment_bg", v) : localStorage.removeItem("moment_bg"); } catch(e){} };
+const [sigMe, setSigMeState] = React.useState(() => { try { return localStorage.getItem("sig_me") || "这一刻的想法……"; } catch(e){ return ""; } });
+const setSigMe = (v) => { setSigMeState(v); try { localStorage.setItem("sig_me", v); } catch(e){} };
+const [sigKo, setSigKoState] = React.useState(() => { try { return localStorage.getItem("sig_ko") || "晴天的另一边。"; } catch(e){ return ""; } });
+const setSigKo = (v) => { setSigKoState(v); try { localStorage.setItem("sig_ko", v); } catch(e){} };
+const [momentProfile, setMomentProfile] = React.useState(null);
+const [momentPin, setMomentPinState] = React.useState(() => { try { return localStorage.getItem("moment_pin") || ""; } catch(e){ return ""; } });
+const setMomentPin = (v) => { setMomentPinState(v); try { v ? localStorage.setItem("moment_pin", v) : localStorage.removeItem("moment_pin"); } catch(e){} };
 React.useEffect(() => { setMomentCache(moments); }, [moments]);
 const pickSkin = (k) => { setSkinState(k); try { localStorage.setItem("skin", k); } catch(e) {} };
 const [chatBg, setChatBgState] = React.useState(() => { try { return localStorage.getItem("chat_bg") || ""; } catch(e) { return ""; } });
