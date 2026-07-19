@@ -590,7 +590,7 @@ return segs;
 function buildHistory(arr) {
 const out = [];
 for (const m of arr) {
-if (m.type === "image") { const _c = "（发了一张照片）" + (m.content || ""); const _l = out[out.length - 1]; if (_l && _l.role === m.role) _l.content += "\n" + _c; else out.push({ role: m.role, content: _c }); continue; }
+if (m.type === "image") { const cnt = m.fileDatas ? m.fileDatas.length : 1; const _c = `（发了${cnt > 1 ? cnt + "张" : "一张"}照片）` + (m.content || ""); const _l = out[out.length - 1]; if (_l && _l.role === m.role) _l.content += "\n" + _c; else out.push({ role: m.role, content: _c }); continue; }
 if (m.type !== "text" || !m.content || m.error) continue;
 let cont = m.content;
 if (typeof cont === "string" && cont.indexOf("[[q]]") === 0) { const _e = cont.indexOf("[[/q]]"); if (_e > -1) cont = "（引用「" + cont.slice(5, _e) + "」）" + cont.slice(_e + 6); }
@@ -1121,21 +1121,25 @@ return (
 );
 }
 function Lightbox() {
-const [src, setSrc] = React.useState("");
+const [state, setState] = React.useState(null);
 React.useEffect(() => {
-const h = (e) => setSrc(e.detail || "");
+const h = (e) => setState(e.detail || null);
 window.addEventListener("lightbox", h);
 return () => window.removeEventListener("lightbox", h);
 }, []);
-if (!src) return null;
+if (!state || !state.srcs || !state.srcs.length) return null;
+const { srcs, idx } = state;
 return (
-<div className="fadebg" onClick={() => setSrc("")} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-<img src={src} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 8 }} />
-<button onClick={() => setSrc("")} style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + 14px)", right: 18, background: "rgba(255,255,255,0.15)", color: "#FFF", border: "none", borderRadius: "50%", width: 34, height: 34, fontSize: 16, cursor: "pointer" }}>✕</button>
+<div className="fadebg" onClick={() => setState(null)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.92)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+<img src={srcs[idx]} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", borderRadius: 8 }} onClick={e => e.stopPropagation()} />
+{srcs.length > 1 && idx > 0 && <button onClick={e => { e.stopPropagation(); setState(p => ({ ...p, idx: p.idx - 1 })); }} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", color: "#FFF", border: "none", borderRadius: "50%", width: 40, height: 40, fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>}
+{srcs.length > 1 && idx < srcs.length - 1 && <button onClick={e => { e.stopPropagation(); setState(p => ({ ...p, idx: p.idx + 1 })); }} style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "rgba(255,255,255,0.15)", color: "#FFF", border: "none", borderRadius: "50%", width: 40, height: 40, fontSize: 22, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>}
+{srcs.length > 1 && <div style={{ position: "absolute", bottom: 28, left: "50%", transform: "translateX(-50%)", color: "rgba(255,255,255,0.55)", fontSize: 12 }}>{idx + 1} / {srcs.length}</div>}
+<button onClick={() => setState(null)} style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + 14px)", right: 18, background: "rgba(255,255,255,0.15)", color: "#FFF", border: "none", borderRadius: "50%", width: 34, height: 34, fontSize: 16, cursor: "pointer" }}>✕</button>
 </div>
 );
 }
-function openLightbox(src) { try { window.dispatchEvent(new CustomEvent("lightbox", { detail: src })); } catch(e) {} }
+function openLightbox(srcOrSrcs, idx) { try { const srcs = Array.isArray(srcOrSrcs) ? srcOrSrcs : [srcOrSrcs]; window.dispatchEvent(new CustomEvent("lightbox", { detail: { srcs, idx: idx || 0 } })); } catch(e) {} }
 function TopBar({ timeStr, theme, onToggleTheme, onSearch }) {
 return (<div className="themed" style={{ padding: "16px 24px 12px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: C.bg }}>
 <div style={{ fontSize: 13, color: C.textMuted, fontFamily: "sans-serif" }}>{timeStr}</div>
@@ -2012,26 +2016,27 @@ if (d.toDateString() === now.toDateString()) return hm;
 return `${d.getFullYear() !== now.getFullYear() ? d.getFullYear() + "年" : ""}${d.getMonth() + 1}月${d.getDate()}日 ${hm}`;
 };
 
-const [pendImg, setPendImg] = React.useState(null);
-const pickImage = async (file) => {
-if (!file || loading) return;
-const dataUrl = await compressImage(file, 1024, 0.82);
-setPendImg(dataUrl);
+const [pendImgs, setPendImgs] = React.useState([]);
+const pickImage = async (files) => {
+if (!files || !files.length || loading) return;
+const urls = await Promise.all(Array.from(files).map(f => compressImage(f, 1024, 0.82)));
+setPendImgs(prev => [...prev, ...urls]);
 setPlusOpen(false);
 };
-const sendImage = async (dataUrl, text) => {
-if (!dataUrl || loading) return;
+const sendImages = async (dataUrls, text) => {
+if (!dataUrls.length || loading) return;
 const cap = (text || "").trim();
 const now = new Date().toISOString();
 const nowA = new Date(Date.now() + 1).toISOString();
-const uMsg = { localId: "ui" + Date.now(), role: "user", content: cap, type: "image", fileData: dataUrl, created_at: now };
+const uMsg = { localId: "ui" + Date.now(), role: "user", content: cap, type: "image", fileDatas: dataUrls, created_at: now };
 const aMsg = { localId: "ai" + Date.now(), role: "assistant", content: "", type: "text", created_at: nowA, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
-const history = [...buildHistory(msgs), { role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: cap || "（我拍了一张照片给你看）" }] }];
-setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false); setModelOpen(false); setPendImg(null); setInput(""); if (taRef.current) taRef.current.style.height = "auto";
+const imgContent = dataUrls.map(url => ({ type: "image_url", image_url: { url } }));
+const history = [...buildHistory(msgs), { role: "user", content: [...imgContent, { type: "text", text: cap || `（我发了${dataUrls.length > 1 ? dataUrls.length + "张" : "一张"}照片给你看）` }] }];
+setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false); setModelOpen(false); setPendImgs([]); setInput(""); if (taRef.current) taRef.current.style.height = "auto";
 schedulePace(aMsg.localId, 1);
 try {
 const content = await runStream(history, aMsg.localId, false);
-try { await sb.from("messages").insert([{ role: "user", content: cap, type: "image", file_data: dataUrl, created_at: now }, { role: "assistant", content, type: "text", created_at: nowA }]); } catch(e) {}
+try { await sb.from("messages").insert([{ role: "user", content: cap, type: "image", file_data: JSON.stringify(dataUrls), created_at: now }, { role: "assistant", content, type: "text", created_at: nowA }]); } catch(e) {}
 trySaveSong(content);
 if (onAutoActions) { onAutoActions(content); if (/<moment>[\s\S]*?<\/moment>/.test(content)) showToast("他发了条朋友圈"); if (/<letter>[\s\S]*?<\/letter>/.test(content)) showToast("他写了封信给你"); }
 } catch(e) {
@@ -2109,11 +2114,13 @@ return (
 </div>
 ) : (
 <React.Fragment>
+{m.type === "image" && (() => { const imgs = m.fileDatas || (m.fileData ? [m.fileData] : []); return imgs.length > 0 ? (<div style={{ display: "flex", gap: 5, overflowX: "auto", scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch", maxWidth: 260, marginBottom: m.content ? 5 : 0, paddingBottom: 2 }} onTouchStart={(e) => startLongPress(e, i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress}>{imgs.map((src, idx) => (<img key={idx} src={src} alt="" onClick={() => openLightbox(imgs, idx)} style={{ width: imgs.length === 1 ? 200 : 140, height: imgs.length === 1 ? 200 : 140, objectFit: "cover", borderRadius: 16, flexShrink: 0, scrollSnapAlign: "start", cursor: "pointer", display: "block" }} />))}</div>) : null; })()}
+{(m.type === "text" || (m.type === "image" && m.content)) && (
 <div onTouchStart={(e) => startLongPress(e, i, "user", i)} onTouchEnd={cancelLongPress} onTouchMove={cancelLongPress} onContextMenu={(e) => { e.preventDefault(); const r=e.currentTarget.getBoundingClientRect(); setLongPressMenu({ key: i, role: "user", msgIdx: i, rect:{top:r.top,bottom:r.bottom,left:r.left,right:r.right,cx:(r.left+r.right)/2} }); }} style={{ backgroundColor: "var(--bubble-user-bg)", color: "var(--bubble-user-text)", borderRadius: 18, padding: "9px 14px", fontSize: 15, lineHeight: 1.6, fontWeight: 300, overflowWrap: "break-word", maxWidth: "100%", whiteSpace: "pre-wrap", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none", ...(longPressMenu && longPressMenu.key === i && longPressMenu.role === "user" ? { transform: "scale(1.03)", transition: "transform 0.18s ease", boxShadow: "0 8px 28px rgba(0,0,0,0.18)" } : { transition: "transform 0.18s ease" }) }}>
-{m.type === "image" && m.fileData && (<img src={m.fileData} alt="" onClick={() => openLightbox(m.fileData)} style={{ maxWidth: 128, maxHeight: 160, borderRadius: 10, display: "block", cursor: "pointer", objectFit: "cover" }} />)}
-{m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", marginTop: 6, lineHeight: 1.6 }}>{m.content}</div>)}
+{m.type === "image" && m.content && (<div style={{ fontSize: 14, color: "var(--bubble-user-text)", lineHeight: 1.6 }}>{m.content}</div>)}
 {m.type === "text" && (function(){ const pq = parseQuote(m.content); return (<React.Fragment>{pq.quote && (<div style={{ borderLeft: "2px solid var(--bubble-user-text)", paddingLeft: 8, marginBottom: 5, fontSize: 12.5, lineHeight: 1.5, opacity: 0.6, maxHeight: 54, overflow: "hidden" }}>{pq.quote.length > 40 ? pq.quote.slice(0, 40) + "…" : pq.quote}</div>)}{pq.body}</React.Fragment>); })()}
 </div>
+)}
 {m.versions && m.versions.length > 1 && (() => { const cur = m.vi != null ? m.vi : m.versions.length - 1; return (<div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 3, justifyContent: "flex-end" }}><button onClick={() => switchVersion(i, -1)} disabled={cur === 0} style={{ background: "none", border: "none", cursor: cur === 0 ? "default" : "pointer", color: C.textFaint, fontSize: 15, padding: "0 3px", opacity: cur === 0 ? 0.3 : 0.8, lineHeight: 1 }}>‹</button><span style={{ fontSize: 10, color: C.textFaint }}>{cur + 1}/{m.versions.length}</span><button onClick={() => switchVersion(i, 1)} disabled={cur === m.versions.length - 1} style={{ background: "none", border: "none", cursor: cur === m.versions.length - 1 ? "default" : "pointer", color: C.textFaint, fontSize: 15, padding: "0 3px", opacity: cur === m.versions.length - 1 ? 0.3 : 0.8, lineHeight: 1 }}>›</button></div>); })()}
 </React.Fragment>
 )}
@@ -2247,11 +2254,16 @@ return (
 <button className="act" onClick={() => setQuoting(null)}>✕</button>
 </div>
 )}
-{pendImg && (
-<div className="msg-appear" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8, background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: "8px 10px" }}>
-<img src={pendImg} alt="" style={{ width: 46, height: 46, objectFit: "cover", borderRadius: 8 }} />
-<span style={{ flex: 1, fontSize: 11, color: C.textFaint }}>配点文字一起发，或直接发送</span>
-<button className="act" onClick={() => setPendImg(null)}>✕</button>
+{pendImgs.length > 0 && (
+<div className="msg-appear" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, background: C.cardBg, border: `1px solid ${C.border}`, borderRadius: 14, padding: "8px 10px", overflowX: "auto" }}>
+{pendImgs.map((src, idx) => (
+<div key={idx} style={{ position: "relative", flexShrink: 0 }}>
+<img src={src} alt="" style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 8, display: "block" }} />
+<button className="act" onClick={() => setPendImgs(prev => prev.filter((_, i) => i !== idx))} style={{ position: "absolute", top: -6, right: -6, background: "var(--card-bg)", borderRadius: "50%", width: 17, height: 17, fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, border: `1px solid ${C.border}` }}>✕</button>
+</div>
+))}
+<span style={{ flex: 1, fontSize: 11, color: C.textFaint, minWidth: 60 }}>配点文字或直接发送</span>
+<button className="act" onClick={() => setPendImgs([])}>✕</button>
 </div>
 )}
 {plusOpen && (
@@ -2262,8 +2274,8 @@ return (
 </div>
 )}
 <div style={{ display: "flex", flexDirection: "column", gap: 4, background: chatBg ? "var(--glass-ai)" : "var(--card-bg)", backdropFilter: chatBg ? "blur(12px)" : undefined, WebkitBackdropFilter: chatBg ? "blur(12px)" : undefined, boxShadow: "var(--card-shadow)", border: `1px solid ${chatBg ? "var(--glass-border)" : "var(--border)"}`, borderRadius: 22, padding: "10px 14px 8px" }}>
-<input type="file" ref={fileInputImage} accept="image/*" style={{ display: "none" }} onChange={(e) => { if (e.target.files?.[0]) pickImage(e.target.files[0]); e.target.value = null; }} />
-<textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ width: "100%", background: "none", border: "none", padding: "3px 2px", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6, boxSizing: "border-box" }} />
+<input type="file" ref={fileInputImage} accept="image/*" multiple style={{ display: "none" }} onChange={(e) => { if (e.target.files?.length) pickImage(e.target.files); e.target.value = null; }} />
+<textarea ref={taRef} rows={1} value={input} onChange={e => { setInput(e.target.value); autoGrow(); }} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); if (pendImgs.length) { sendImages(pendImgs, input); } else { sendText(input); } } }} placeholder="写短笺......" style={{ width: "100%", background: "none", border: "none", padding: "3px 2px", fontSize: 14, outline: "none", color: C.text, fontWeight: 300, fontFamily: "inherit", resize: "none", maxHeight: 138, lineHeight: 1.6, boxSizing: "border-box" }} />
 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 <button className="nav-btn" onClick={() => { setPlusOpen(v => !v); setModelOpen(false); }} title="更多" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 4, fontSize: 18, color: "var(--text-muted)", lineHeight: 1, width: 30, height: 30, flexShrink: 0 }}>{plusOpen ? "✕" : "＋"}</button>
 <button className="btn" onClick={() => { setModelOpen(v => !v); setPlusOpen(false); }} title="模型与深度思考设置" style={{ fontSize: 11, color: C.textFaint, background: "var(--hover)", border: "none", padding: "5px 10px", borderRadius: 12, whiteSpace: "nowrap", cursor: "pointer", flexShrink: 0, fontFamily: "inherit" }}>{modelShort(modelId)}{thinkMode !== "off" ? " · 思考" : ""}</button>
@@ -2271,7 +2283,7 @@ return (
 {loading ? (
 <button className="btn" onClick={stop} title="停止" style={{ background: "var(--primary)", color: "#FFFFFF", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 11 }}>■</button>
 ) : (
-<button className="btn" onClick={() => { if (pendImg) { sendImage(pendImg, input); } else { sendText(input); } }} disabled={!input.trim() && !pendImg} title="发送" style={{ background: (input.trim() || pendImg) ? "var(--primary)" : "var(--hover)", color: (input.trim() || pendImg) ? "#FFFFFF" : "var(--text-faint)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: (input.trim() || pendImg) ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Send /></button>
+<button className="btn" onClick={() => { if (pendImgs.length) { sendImages(pendImgs, input); } else { sendText(input); } }} disabled={!input.trim() && !pendImgs.length} title="发送" style={{ background: (input.trim() || pendImgs.length) ? "var(--primary)" : "var(--hover)", color: (input.trim() || pendImgs.length) ? "#FFFFFF" : "var(--text-faint)", border: "none", borderRadius: "50%", width: 36, height: 36, cursor: (input.trim() || pendImgs.length) ? "pointer" : "default", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Icons.Send /></button>
 )}
 </div>
 </div>
@@ -2288,7 +2300,7 @@ const top = r ? (below ? r.bottom + 8 : undefined) : vh*0.4;
 const bottom = r ? (below ? undefined : (vh - r.top + 8)) : undefined;
 return (
 <div className="fadebg" onClick={() => setLongPressMenu(null)} style={{ position: "fixed", inset: 0, zIndex: 400, background: "transparent" }}>
-<div className="pop" onClick={e => e.stopPropagation()} style={{ position: "absolute", left: left, top: top, bottom: bottom, width: menuW, background: C.cardBg, borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.22)", border: `1px solid ${C.border}`, transformOrigin: below ? "top center" : "bottom center" }}>
+<div className="pop" onClick={e => e.stopPropagation()} style={{ position: "absolute", left: left, top: top, bottom: bottom, width: menuW, background: C.cardBg, borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 30px rgba(0,0,0,0.22)", border: `1px solid ${C.border}`, transformOrigin: below ? "top center" : "bottom center", userSelect: "none", WebkitUserSelect: "none" }}>
 {(() => {
 const lm = longPressMenu;
 const items = [];
@@ -2808,7 +2820,7 @@ const msgRes = await sb
 .order("created_at", { ascending: true });
 
 if (msgRes.error) throw msgRes.error;
-if (msgRes.data) setMessages(msgRes.data.map(m => { const base = m.file_data ? { ...m, fileData: m.file_data } : m; const rz = loadReasoning(m.id); return rz ? { ...base, reasoning: rz.r, thinkSec: rz.s } : base; }));
+if (msgRes.data) setMessages(msgRes.data.map(m => { let base = m; if (m.file_data) { try { const parsed = JSON.parse(m.file_data); base = Array.isArray(parsed) ? { ...m, fileDatas: parsed } : { ...m, fileData: m.file_data }; } catch(e) { base = { ...m, fileData: m.file_data }; } } const rz = loadReasoning(m.id); return rz ? { ...base, reasoning: rz.r, thinkSec: rz.s } : base; }));
 const letterRes = await sb.from("letters").select("*").order("created_at", { ascending: false }).limit(1);
 if (letterRes.data && letterRes.data.length > 0) setLetter(letterRes.data[0]);
 setSyncState({ status: "ok", msg: (msgRes.data || []).length, mem: (memRes.data || []).length, error: "" });
