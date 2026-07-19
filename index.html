@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>晴天的另一边</title>
-<meta name="version" content="2026-07-17-批13-图片缩略图"))))))>
+<meta name="version" content="2026-07-18-批15-顶栏透明")))))))))>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1907,7 +1907,7 @@ showToast(`已收进一起听：《${song.title}》`);
 
 const persistPair = async (uMsg, aMsg) => {
 try {
-const { data } = await sb.from("messages").insert([{ role: "user", content: uMsg.content, type: "text" }, { role: "assistant", content: aMsg.content, type: "text" }]).select();
+const { data } = await sb.from("messages").insert([{ role: "user", content: uMsg.content, type: "text", created_at: now }, { role: "assistant", content: aMsg.content, type: "text", created_at: nowA }]).select();
 if (data && data.length === 2) { setMessages(prev => prev.map(m => m.localId === uMsg.localId ? { ...m, id: data[0].id } : m.localId === aMsg.localId ? { ...m, id: data[1].id } : m)); const rz = lastGenRef.current; if (rz && rz.reasoning) saveReasoning(data[1].id, rz.reasoning, rz.thinkSec); }
 } catch(e) {}
 };
@@ -1933,8 +1933,9 @@ return result.content;
 const sendText = async (text) => {
 if (!text.trim() || loading) return;
 const now = new Date().toISOString();
+const nowA = new Date(Date.now() + 1).toISOString();
 const uMsg = { localId: "u" + Date.now(), role: "user", content: quoting ? ("[[q]]" + quoting + "[[/q]]" + text.trim()) : text.trim(), type: "text", created_at: now };
-const aMsg = { localId: "a" + Date.now(), role: "assistant", content: "", type: "text", created_at: now, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
+const aMsg = { localId: "a" + Date.now(), role: "assistant", content: "", type: "text", created_at: nowA, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
 const history = buildHistory([...msgs, uMsg]);
 if (pokePendingRef.current) { pokePendingRef.current = false; const lh = history[history.length - 1]; if (lh && lh.role === "user" && typeof lh.content === "string") lh.content = "（" + persona.nick + "刚戳了戳你）" + lh.content; }
 setMessages(prev => [...prev, uMsg, aMsg]); setInput(""); setQuoting(null); setLoading(true); setPlusOpen(false); setModelOpen(false);
@@ -2022,14 +2023,15 @@ const sendImage = async (dataUrl, text) => {
 if (!dataUrl || loading) return;
 const cap = (text || "").trim();
 const now = new Date().toISOString();
+const nowA = new Date(Date.now() + 1).toISOString();
 const uMsg = { localId: "ui" + Date.now(), role: "user", content: cap, type: "image", fileData: dataUrl, created_at: now };
-const aMsg = { localId: "ai" + Date.now(), role: "assistant", content: "", type: "text", created_at: now, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
+const aMsg = { localId: "ai" + Date.now(), role: "assistant", content: "", type: "text", created_at: nowA, streaming: true, phase: "thinking", paced: true, reveal: 0, gen: 1 };
 const history = [...buildHistory(msgs), { role: "user", content: [{ type: "image_url", image_url: { url: dataUrl } }, { type: "text", text: cap || "（我拍了一张照片给你看）" }] }];
 setMessages(prev => [...prev, uMsg, aMsg]); setLoading(true); setPlusOpen(false); setModelOpen(false); setPendImg(null); setInput(""); if (taRef.current) taRef.current.style.height = "auto";
 schedulePace(aMsg.localId, 1);
 try {
 const content = await runStream(history, aMsg.localId, false);
-try { await sb.from("messages").insert([{ role: "user", content: cap, type: "image", file_data: dataUrl }, { role: "assistant", content, type: "text" }]); } catch(e) {}
+try { await sb.from("messages").insert([{ role: "user", content: cap, type: "image", file_data: dataUrl, created_at: now }, { role: "assistant", content, type: "text", created_at: nowA }]); } catch(e) {}
 trySaveSong(content);
 if (onAutoActions) { onAutoActions(content); if (/<moment>[\s\S]*?<\/moment>/.test(content)) showToast("他发了条朋友圈"); if (/<letter>[\s\S]*?<\/letter>/.test(content)) showToast("他写了封信给你"); }
 } catch(e) {
@@ -2046,7 +2048,7 @@ return (
 <div className="page-enter" style={{ display: "flex", flexDirection: "column", height: kbUp ? "calc(var(--vvh, 100dvh) - env(safe-area-inset-top))" : "calc(100dvh - env(safe-area-inset-top) - 60px - env(safe-area-inset-bottom))", position: "relative", isolation: "isolate", transition: "height 0.12s ease-out" }}>
 {chatBg && (<div style={{ position: "absolute", inset: 0, zIndex: -1, backgroundImage: `url(${chatBg})`, backgroundSize: "cover", backgroundPosition: "center", filter: bgBlur ? `blur(${bgBlur}px)` : "none", transform: bgBlur ? "scale(1.08)" : "none" }} />)}
 {chatBg && bgDim > 0 && (<div style={{ position: "absolute", inset: 0, zIndex: -1, background: "var(--bg)", opacity: bgDim }} />)}
-<div className="themed" style={{ borderBottom: `1px solid ${C.border}`, background: C.bg }}>
+<div className="themed" style={{ borderBottom: `1px solid ${chatBg ? "var(--glass-border)" : C.border}`, background: chatBg ? "transparent" : C.bg }}>
 <div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 24px 10px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
 <div style={{ fontSize: 13, color: C.textMuted, fontFamily: "sans-serif" }}>{timeStr}</div>
 <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
@@ -2070,8 +2072,8 @@ return (
 </div>
 </div>
 )}
-<div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: "auto" }}>
-<div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 20px" }}>
+<div ref={scrollRef} onScroll={onScroll} style={{ flex: 1, overflowY: "auto", overflowX: "hidden" }}>
+<div style={{ maxWidth: 760, margin: "0 auto", padding: "12px 20px 20px" }}>
 {msgs.map((m, i) => {
 const isUser = m.role === "user";
 const isAiText = !isUser && m.type === "text";
